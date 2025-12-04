@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { RefreshCw, UploadCloud, FileText, Loader, ArrowRight, XCircle, Info } from 'lucide-react';
+import { RefreshCw, UploadCloud, FileText, Loader, ArrowRight, XCircle, Info, CheckCircle } from 'lucide-react';
 
 // URL del Backend de Render
 const BACKEND_URL = "https://reportpilot-backend.onrender.com";
@@ -18,7 +18,7 @@ export default function App() {
   const [year, setYear] = useState(new Date().getFullYear().toString());
 
   // Mapeo de meses para el selector
-  const months = Array.from({ length: 12 }, (_, i) => 
+  const months = Array.from({ length: 12 }, (_, i) =>
     new Date(0, i).toLocaleString('default', { month: 'long' })
   );
   const currentYear = new Date().getFullYear();
@@ -32,7 +32,7 @@ export default function App() {
     const uploadedFile = acceptedFiles[0];
     if (uploadedFile) {
       setFile(uploadedFile);
-      
+
       const reader = new FileReader();
       reader.onload = (event) => {
         // Extraer solo la parte base64 (después de la coma)
@@ -73,7 +73,7 @@ export default function App() {
     setError('');
 
     try {
-      const response = await fetch(`${BACKEND_URL}/generate`, {
+      const response = await fetch(`${BACKEND_URL}/reports/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 p-6 lg:p-10">
         <h2 className="text-3xl font-semibold mb-6">Generar Nuevo Reporte</h2>
-        
+
         {/* Alertas */}
         {error && (
           <div className="flex items-center bg-red-800 p-4 rounded-lg mb-6 shadow-md">
@@ -166,30 +166,30 @@ export default function App() {
             <span className="text-red-100 font-medium">Error: {error}</span>
           </div>
         )}
-        
+
         {/* Formulario e Input */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
+
           {/* Columna de Input (Formulario y Subida) */}
           <div className="bg-gray-800 p-6 rounded-xl shadow-2xl">
             <h3 className="text-xl font-medium mb-4 text-blue-300">Detalles del Archivo</h3>
-            
+
             {/* Campos de Contexto */}
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Company ID</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={companyId}
                   onChange={(e) => setCompanyId(e.target.value)}
                   className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-              
+
               <div className="flex space-x-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-400 mb-1">Período</label>
-                  <select 
+                  <select
                     value={period}
                     onChange={(e) => setPeriod(e.target.value)}
                     className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -199,7 +199,7 @@ export default function App() {
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-400 mb-1">Año</label>
-                  <select 
+                  <select
                     value={year}
                     onChange={(e) => setYear(e.target.value)}
                     className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -209,10 +209,10 @@ export default function App() {
                 </div>
               </div>
             </div>
-            
+
             {/* Área de Subida de Archivo (Dropzone) */}
-            <div 
-              {...getRootProps()} 
+            <div
+              {...getRootProps()}
               className={`p-10 border-2 border-dashed rounded-lg text-center transition duration-200 cursor-pointer 
                 ${isDragActive ? 'border-blue-500 bg-gray-700' : 'border-gray-600 hover:border-blue-500 hover:bg-gray-700'}`}
             >
@@ -224,7 +224,7 @@ export default function App() {
                 <p className="text-gray-400">Arrastra y suelta tu recibo (JPG, PNG, PDF) aquí, o haz clic para buscar.</p>
               )}
             </div>
-            
+
             {/* Botón de Acción y Reset */}
             <div className="mt-6 flex space-x-4">
               <button
@@ -244,7 +244,7 @@ export default function App() {
                   </>
                 )}
               </button>
-              
+
               <button
                 onClick={handleReset}
                 disabled={loading}
@@ -254,11 +254,11 @@ export default function App() {
               </button>
             </div>
           </div>
-          
+
           {/* Columna de Output (Resultado del Análisis) */}
           <div className="bg-gray-800 p-6 rounded-xl shadow-2xl">
             <h3 className="text-xl font-medium mb-4 text-blue-300">Resultado del Análisis de IA</h3>
-            
+
             <div className="h-96 overflow-y-auto bg-gray-700 p-4 rounded-lg border border-gray-600">
               {loading && (
                 <div className="flex flex-col items-center justify-center h-full text-blue-400">
@@ -268,10 +268,10 @@ export default function App() {
               )}
 
               {error && !loading && (
-                 <div className="flex flex-col items-center justify-center h-full text-red-400">
-                    <XCircle className="w-8 h-8 mb-3" />
-                    <p className='text-center'>Hubo un error. Revisa la consola para más detalles.</p>
-                 </div>
+                <div className="flex flex-col items-center justify-center h-full text-red-400">
+                  <XCircle className="w-8 h-8 mb-3" />
+                  <p className='text-center'>Hubo un error. Revisa la consola para más detalles.</p>
+                </div>
               )}
 
               {!loading && !analysisResult && !error && (
@@ -286,10 +286,10 @@ export default function App() {
             </div>
           </div>
         </div>
-        
+
         <div className="mt-10 p-4 bg-gray-800 rounded-lg text-sm text-gray-400">
-            <p className="font-semibold text-blue-300">Nota importante:</p>
-            <p>La URL del backend es: <code className="bg-gray-700 p-1 rounded">https://reportpilot-backend.onrender.com</code>. Si el análisis falla, verifica la clave <code className="bg-gray-700 p-1 rounded">GEMINI_API_KEY</code> en Render y las reglas de <code className="bg-gray-700 p-1 rounded">CORS</code> en el código del Backend.</p>
+          <p className="font-semibold text-blue-300">Nota importante:</p>
+          <p>La URL del backend es: <code className="bg-gray-700 p-1 rounded">https://reportpilot-backend.onrender.com</code>. Si el análisis falla, verifica la clave <code className="bg-gray-700 p-1 rounded">GEMINI_API_KEY</code> en Render y las reglas de <code className="bg-gray-700 p-1 rounded">CORS</code> en el código del Backend.</p>
         </div>
       </main>
     </div>
