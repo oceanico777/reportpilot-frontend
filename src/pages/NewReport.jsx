@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import FileUpload from '../components/FileUpload';
 
 const NewReport = () => {
     const [loading, setLoading] = useState(false);
@@ -7,6 +8,7 @@ const NewReport = () => {
     // Nuevos campos para contexto
     const [tourId, setTourId] = useState('');
     const [clientName, setClientName] = useState('');
+    const [sourceFilePath, setSourceFilePath] = useState('');
 
     const [month, setMonth] = useState(10);
     const [year, setYear] = useState(2025);
@@ -26,6 +28,11 @@ const NewReport = () => {
             return; // Detiene la ejecución aquí
         }
 
+        if (!sourceFilePath) {
+            setError('⚠️ Por favor, sube un archivo CSV o PDF para continuar.');
+            return;
+        }
+
         setLoading(true);
 
         const payload = {
@@ -33,7 +40,8 @@ const NewReport = () => {
             tour_id: tourId,      // Enviamos los nuevos datos
             client_name: clientName,
             month,
-            year
+            year,
+            source_file_path: sourceFilePath
         };
 
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -102,6 +110,11 @@ const NewReport = () => {
                     </div>
 
                     <hr style={{ borderColor: 'var(--color-border)', opacity: 0.3 }} />
+
+                    <div>
+                        <label className="input-label">Archivo de Datos (CSV/PDF) *</label>
+                        <FileUpload onUploadSuccess={setSourceFilePath} />
+                    </div>
 
                     {/* Resto de campos (Fecha, Archivo, etc.) */}
                     <div>

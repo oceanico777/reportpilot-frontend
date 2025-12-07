@@ -110,6 +110,37 @@ export default function App() {
     setLoading(false);
   };
 
+  // Componente UploadArea
+  const UploadArea = ({ file, getRootProps, getInputProps, isDragActive, isLoading }) => {
+    const idleText = isDragActive
+      ? "Suelta el archivo aquí..."
+      : "Arrastra y suelta tu recibo (JPG/PNG), o haz click para buscar.";
+
+    return (
+      <div
+        {...getRootProps()}
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors 
+          ${isDragActive ? 'border-indigo-400 bg-indigo-900/20' : 'border-gray-600 hover:border-indigo-500'}
+          ${isLoading ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}
+      >
+        <input {...getInputProps()} />
+        {file ? (
+          <div className="text-white flex flex-col items-center">
+            <CheckCircle className="w-8 h-8 text-green-400 mb-2" />
+            <p className="font-semibold text-lg">{file.name}</p>
+            <p className="text-sm text-gray-400">Listo para generar el reporte.</p>
+          </div>
+        ) : (
+          <div className="text-gray-400 flex flex-col items-center">
+            <FileText className="w-8 h-8 mb-2" />
+            <p className="font-medium text-white">{idleText}</p>
+            <p className="text-sm">(Solo se aceptan archivos JPG/PNG de recibos)</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Función para renderizar el resultado (Markdown)
   const renderResult = (text) => {
     if (!text) return null;
