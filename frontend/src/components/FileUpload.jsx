@@ -117,7 +117,7 @@ const FileUpload = ({ onUploadSuccess }) => {
                 className="input-file-hidden"
                 multiple={false}
                 onChange={handleChange}
-                accept=".csv, .pdf, .jpg, .jpeg, .png"
+                accept=".csv,.pdf,.jpg,.jpeg,.png,image/jpeg,image/png,text/csv,application/pdf"
                 style={{ display: 'none' }}
             />
 
