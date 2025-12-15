@@ -10,12 +10,24 @@ const NewReport = () => {
     const [clientName, setClientName] = useState('');
     const [sourceFilePath, setSourceFilePath] = useState('');
 
+    // Datos extraídos por Gemini OCR
+    const [extractedData, setExtractedData] = useState(null);
+    const [ocrLoading, setOcrLoading] = useState(false);
+
     const [month, setMonth] = useState(10);
     const [year, setYear] = useState(2025);
     const [companyId, setCompanyId] = useState('demo-company-123');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const { session } = useAuth();
+
+    // Handler para cuando FileUpload completa el upload
+    const handleUploadSuccess = (filePath, ocrData) => {
+        setSourceFilePath(filePath);
+        if (ocrData && !ocrData.error) {
+            setExtractedData(ocrData);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,7 +53,8 @@ const NewReport = () => {
             client_name: clientName,
             month,
             year,
-            source_file_path: sourceFilePath
+            source_file_path: sourceFilePath,
+            extracted_data: extractedData // Incluimos los datos extraídos por Gemini
         };
 
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -58,7 +71,10 @@ const NewReport = () => {
                 body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || `HTTP error! status: ${res.status}`);
+            }
 
             const data = await res.json();
             setSuccess(`✅ Recibos procesados para ${clientName} (Tour: ${tourId}). ID: ${data.id}`);
@@ -69,7 +85,7 @@ const NewReport = () => {
 
         } catch (err) {
             console.error('Error:', err);
-            setError('Error al procesar. Verifica que el backend esté activo.');
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -113,8 +129,46 @@ const NewReport = () => {
 
                     <div>
                         <label className="input-label">Archivo de Datos (CSV/PDF/JPG/PNG) *</label>
-                        <FileUpload onUploadSuccess={setSourceFilePath} />
+                        <FileUpload onUploadSuccess={handleUploadSuccess} />
                     </div>
+
+                    {/* Mostrar datos extraídos por Gemini OCR */}
+                    {extractedData && (
+                        <div style={{
+                            padding: '1rem',
+                            background: 'rgba(16, 185, 129, 0.05)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: 'var(--radius-md)',
+                            marginTop: '1rem'
+                        }}>
+                            <h3 style={{ color: 'var(--color-text)', marginBottom: '0.5rem', fontSize: '1rem' }}>Detalles detectados</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Comercio</label>
+                                    <p style={{ margin: '0.25rem 0', fontWeight: '500' }}>{extractedData.vendor || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Fecha</label>
+                                    <p style={{ margin: '0.25rem 0', fontWeight: '500' }}>{extractedData.date || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Monto</label>
+                                    <p style={{ margin: '0.25rem 0', fontWeight: '500' }}>
+                                        {extractedData.currency || ''} ${extractedData.amount || 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Categoría</label>
+                                    <p style={{ margin: '0.25rem 0', fontWeight: '500' }}>{extractedData.category || 'N/A'}</p>
+                                </div>
+                            </div>
+                            {extractedData.confidence_score && (
+                                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+                                    Probabilidad de acierto: {(extractedData.confidence_score * 100).toFixed(0)}%
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {/* Resto de campos (Fecha, Archivo, etc.) */}
                     <div>
@@ -143,7 +197,7 @@ const NewReport = () => {
                     {success && <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--color-success)', borderRadius: 'var(--radius-md)', color: 'var(--color-success)' }}>{success}</div>}
 
                     <button type="submit" className="btn-primary" disabled={loading}>
-                        {loading ? 'Analizando con IA...' : 'Procesar Recibos'}
+                        {loading ? 'Procesando...' : 'Generar Reporte'}
                     </button>
                 </form>
             </div>

@@ -29,7 +29,7 @@ const Sidebar = ({ toggleTheme, currentTheme }) => {
             <div className="sidebar-header">
                 <div className="logo-container">
                     <div className="logo-icon"><FileText size={24} color="white" /></div>
-                    <span className="logo-text">ReportPilot AI</span>
+                    <span className="logo-text">ReportPilot</span>
                 </div>
                 {user && (
                     <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>

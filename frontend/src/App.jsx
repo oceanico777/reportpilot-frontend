@@ -6,8 +6,7 @@ import {
   Settings,
   PlusCircle,
   BarChart3,
-  Menu,
-  X,
+  Calculator,
   LogOut
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -17,6 +16,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { Login } from './components/Login'
 import Dashboard from './pages/Dashboard'
 import NewReport from './pages/NewReport'
+import Planning from './pages/Planning'
 
 const SidebarItem = ({ icon: Icon, label, to, active }) => {
   return (
@@ -47,7 +47,7 @@ const Sidebar = () => {
           <div className="logo-icon">
             <FileText size={24} color="white" />
           </div>
-          <span className="logo-text">ReportPilot AI</span>
+          <span className="logo-text">ReportPilot</span>
         </div>
         {user && (
           <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
@@ -76,6 +76,12 @@ const Sidebar = () => {
             label="New Report"
             to="/new"
             active={location.pathname === '/new'}
+          />
+          <SidebarItem
+            icon={Calculator}
+            label="Proyecciones"
+            to="/planning"
+            active={location.pathname === '/planning'}
           />
         </div>
 
@@ -111,6 +117,9 @@ const Sidebar = () => {
 }
 
 
+import Reports from './pages/Reports'
+import Insights from './pages/Insights'
+
 function App() {
   return (
     <Router>
@@ -126,9 +135,10 @@ function App() {
                   <main className="main-content">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
-                      <Route path="/reports" element={<div className="page-content"><h1>All Reports</h1></div>} />
+                      <Route path="/reports" element={<Reports />} />
                       <Route path="/new" element={<NewReport />} />
-                      <Route path="/insights" element={<div className="page-content"><h1>Insights</h1></div>} />
+                      <Route path="/planning" element={<Planning />} />
+                      <Route path="/insights" element={<Insights />} />
                       <Route path="/settings" element={<div className="page-content"><h1>Settings</h1></div>} />
                     </Routes>
                   </main>

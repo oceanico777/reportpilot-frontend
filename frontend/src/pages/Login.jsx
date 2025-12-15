@@ -13,7 +13,7 @@ const Login = () => {
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--color-bg)' }}>
             <div className="card" style={{ padding: '2rem', width: '300px', textAlign: 'center' }}>
-                <h2 style={{ marginBottom: '1.5rem', color: 'var(--color-text)' }}>ReportPilot AI</h2>
+                <h2 style={{ marginBottom: '1.5rem', color: 'var(--color-text)' }}>ReportPilot</h2>
                 <button onClick={handleLogin} className="btn-primary" style={{ width: '100%' }}>
                     Simular Login
                 </button>

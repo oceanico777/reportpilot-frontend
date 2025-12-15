@@ -79,9 +79,11 @@ const FileUpload = ({ onUploadSuccess }) => {
             }
 
             const data = await response.json();
+            console.log("Upload response:", data); // Debug log
             setSuccess(true);
             if (onUploadSuccess) {
-                onUploadSuccess(data.file_path);
+                // Pass both file_path and extracted_data to parent
+                onUploadSuccess(data.file_path, data.extracted_data);
             }
         } catch (err) {
             console.error("Upload error:", err);

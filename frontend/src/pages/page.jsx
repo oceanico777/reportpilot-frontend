@@ -169,7 +169,7 @@ export default function App() {
       {/* Sidebar - Componente de Navegación */}
       <div className="bg-gray-800 w-full lg:w-64 p-6 flex flex-col justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-8 text-blue-400">ReportPilot AI</h1>
+          <h1 className="text-2xl font-bold mb-8 text-blue-400">ReportPilot</h1>
           <nav>
             <div className="flex items-center p-3 rounded-lg bg-blue-600 text-white mb-2 shadow-lg">
               <FileText className="w-5 h-5 mr-3" />
