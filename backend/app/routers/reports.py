@@ -11,12 +11,31 @@ from ..database import get_db
 from .. import models, schemas
 from ..services import report_generator
 from ..auth import get_current_user, get_user_company
+from ..services import tasks
 
 router = APIRouter()
 
 @router.on_event("startup")
 def startup_event():
     pass
+
+@router.post("/admin/export-zip")
+def export_zip_endpoint(
+    month: int = Query(...),
+    year: int = Query(...),
+    db: Session = Depends(get_db),
+    company_id: str = Depends(get_user_company)
+):
+    # Run synchronously for immediate download (MVP)
+    # This calls the task function directly instead of queueing it
+    result = tasks.export_receipts_zip(company_id, month, year)
+    
+    if result.get("status") == "failed":
+        raise HTTPException(status_code=400, detail=result.get("message"))
+    elif result.get("status") == "error":
+        raise HTTPException(status_code=500, detail=result.get("message"))
+        
+    return result
 
 @router.post("/upload")
 async def upload_file(

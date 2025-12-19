@@ -55,9 +55,15 @@ const AccountantDashboard = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                alert(`Exportación iniciada (Task ID: ${data.task_id}). Te notificaremos cuando esté lista.`);
+                if (data.download_url) {
+                    // Open in new tab to trigger download
+                    window.open(data.download_url, '_blank');
+                } else {
+                    alert(`Exportación iniciada (Task ID: ${data.task_id}). Te notificaremos cuando esté lista.`);
+                }
             } else {
-                alert("Error iniciando exportación");
+                const errData = await res.json().catch(() => ({}));
+                alert(`Error iniciando exportación: ${errData.detail || 'Error desconocido'}`);
             }
         } catch (err) {
             console.error("Export error:", err);
