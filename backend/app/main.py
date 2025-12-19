@@ -51,10 +51,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 # CORS configuration
+origins = [
+    "http://localhost:5173",
+    "http://localhost:3000", 
+    "https://reportpilot-frontend.vercel.app",
+    "https://reportpilot-frontend-git-main-oceanico777s-projects.vercel.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
