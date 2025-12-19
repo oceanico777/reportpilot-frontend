@@ -252,20 +252,25 @@ const NewReport = () => {
 
                 {/* 1. CONFIGURACIÓN DEL TOUR */}
                 <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem' }}>
-                        <div>
-                            <label className="form-label" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)' }}>Tour ID</label>
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '1.5rem',
+                        alignItems: 'flex-end'
+                    }}>
+                        <div style={{ flex: '1 1 200px' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '8px', display: 'block' }}>Tour ID</label>
                             <input
                                 type="text"
                                 className="form-input"
                                 value={tourId}
                                 onChange={(e) => setTourId(e.target.value)}
                                 placeholder="Eje: T-2025-001"
-                                style={{ background: 'rgba(0,0,0,0.2)' }}
+                                style={{ background: 'rgba(0,0,0,0.2)', width: '100%' }}
                             />
                         </div>
-                        <div>
-                            <label className="form-label" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)' }}>Monto Asignado (Budget)</label>
+                        <div style={{ flex: '1 1 300px' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '8px', display: 'block' }}>Monto Asignado (Budget)</label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <input
                                     type="number"
@@ -273,27 +278,32 @@ const NewReport = () => {
                                     value={budgetInput}
                                     onChange={(e) => setBudgetInput(e.target.value)}
                                     placeholder="Total entregado"
-                                    style={{ background: 'rgba(0,0,0,0.2)' }}
+                                    style={{ background: 'rgba(0,0,0,0.2)', flex: 1 }}
                                 />
                                 <button
                                     onClick={handleSaveBudget}
                                     disabled={savingBudget || !tourId}
                                     className="btn-premium"
-                                    style={{ padding: '0 1rem', fontSize: '0.8rem' }}
+                                    style={{
+                                        padding: '0 1.5rem',
+                                        height: '42px',
+                                        fontSize: '0.85rem',
+                                        whiteSpace: 'nowrap'
+                                    }}
                                 >
                                     {savingBudget ? '...' : 'Fijar'}
                                 </button>
                             </div>
                         </div>
-                        <div>
-                            <label className="form-label" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)' }}>Cliente</label>
+                        <div style={{ flex: '1 1 200px' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '8px', display: 'block' }}>Cliente</label>
                             <input
                                 type="text"
                                 className="form-input"
                                 value={clientName}
                                 onChange={(e) => setClientName(e.target.value)}
                                 placeholder="Nombre cliente"
-                                style={{ background: 'rgba(0,0,0,0.2)' }}
+                                style={{ background: 'rgba(0,0,0,0.2)', width: '100%' }}
                             />
                         </div>
                     </div>

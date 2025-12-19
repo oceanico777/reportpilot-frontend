@@ -51,18 +51,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 # CORS configuration
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://reportpilot-frontend.vercel.app",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex=r"https://.*\.vercel\.app", # Matches preview deployments
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,7 +61,8 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    print(f"DEBUG: Incoming {request.method} request to {request.url.path}")
+    origin = request.headers.get("origin")
+    print(f"DEBUG: Incoming {request.method} request to {request.url.path} from origin: {origin}")
     start_time = time.time()
     response = await call_next(request)
     duration = time.time() - start_time
