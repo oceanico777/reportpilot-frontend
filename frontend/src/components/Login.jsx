@@ -9,7 +9,7 @@ export const Login = () => {
     const handleLogin = (e) => {
         e.preventDefault();
         signIn();
-        navigate('/');
+        navigate('/dashboard');
     };
 
     return (

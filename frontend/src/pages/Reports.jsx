@@ -20,7 +20,7 @@ const Reports = () => {
 
     const fetchReports = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
             // Fetch all reports, newest first
             const res = await fetch(`${API_URL}/reports/?limit=50&skip=0`, {
                 headers: {
@@ -45,7 +45,7 @@ const Reports = () => {
 
         setDeletingId(id);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
             const res = await fetch(`${API_URL}/reports/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -164,6 +164,11 @@ const Reports = () => {
                                                 </div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                                                     {report.vendor || 'Unknown Vendor'}
+                                                    {report.vendor_nit && (
+                                                        <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--color-primary)' }}>
+                                                            NIT: {report.vendor_nit}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -250,6 +255,12 @@ const Reports = () => {
                             <div>
                                 <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Comercio (Vendor)</label>
                                 <p style={{ fontWeight: '500' }}>{selectedReport.vendor || 'N/A'}</p>
+                                {selectedReport.vendor_nit && (
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <FileText size={12} />
+                                        NIT: {selectedReport.vendor_nit}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Fecha</label>

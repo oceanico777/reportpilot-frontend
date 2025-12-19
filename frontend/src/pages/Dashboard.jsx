@@ -1,33 +1,94 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, CheckCircle, Loader } from 'lucide-react';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PlusCircle,
+    TrendingUp,
+    PieChart as PieChartIcon,
+    BarChart3,
+    DollarSign,
+    ArrowUpRight,
+    Briefcase,
+    Calendar,
+    RefreshCw,
+    Wifi
+} from 'lucide-react';
+import {
+    LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
+import { getPendingReports, syncOfflineReports } from '../utils/offlineManager';
 
 const Dashboard = () => {
     const { session } = useAuth();
     const [stats, setStats] = useState({
-        total_reports: 0,
-        monthly_stats: [],
-        recent_activity: [],
-        category_stats: []
+        total_reports: 124,
+        total_spent: 45600000,
+        monthly_stats: [
+            { month: 'Ene', total: 3200000 },
+            { month: 'Feb', total: 4100000 },
+            { month: 'Mar', total: 3800000 },
+            { month: 'Abr', total: 5200000 },
+            { month: 'May', total: 4900000 },
+            { month: 'Jun', total: 6100000 },
+        ],
+        client_stats: [
+            { name: 'Grupo A', value: 15000000 },
+            { name: 'Corporativo B', value: 12000000 },
+            { name: 'Eventos C', value: 8000000 },
+            { name: 'Turismo D', value: 6000000 },
+            { name: 'Otros', value: 4600000 },
+        ],
+        recent_activity: [
+            { id: 1, tour_id: 'T-2025-001', created_at: '2025-10-15', amount: 120000 },
+            { id: 2, tour_id: 'T-2025-002', created_at: '2025-10-14', amount: 45000 },
+            { id: 3, tour_id: 'T-2025-003', created_at: '2025-10-13', amount: 890000 },
+            { id: 4, tour_id: 'T-2025-004', created_at: '2025-10-12', amount: 230000 },
+        ],
+        category_stats: [
+            { name: '🍽️ Restaurante', value: 15400000 },
+            { name: '🎟️ Atractivo', value: 12500000 },
+            { name: '🍿 Snack', value: 4200000 },
+            { name: '📦 Otros', value: 13500000 },
+        ]
     });
     const [loading, setLoading] = useState(true);
+    const [dateRange, setDateRange] = useState({ start: null, end: null, label: 'Todo' });
+    const [pendingCount, setPendingCount] = useState(0);
+    const [syncing, setSyncing] = useState(false);
 
-    // --- 1. FETCH DATA ---
+    useEffect(() => {
+        setPendingCount(getPendingReports().length);
+    }, []);
+
     useEffect(() => {
         if (session?.access_token) {
             fetchDashboardStats();
         }
-    }, [session]);
+    }, [session, dateRange]);
+
+    const handleSync = async () => {
+        if (syncing || pendingCount === 0) return;
+        setSyncing(true);
+        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+        await syncOfflineReports(session, API_URL);
+        setPendingCount(getPendingReports().length);
+        fetchDashboardStats();
+        setSyncing(false);
+    };
 
     const fetchDashboardStats = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${API_URL}/reports/dashboard-stats`, {
+            // Only show loader on initial load or if we want to blocking-load
+            // setLoading(true); 
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+
+            let queryParams = '';
+            if (dateRange.start && dateRange.end) {
+                queryParams = `?start_date=${dateRange.start}&end_date=${dateRange.end}`;
+            }
+
+            const res = await fetch(`${API_URL}/reports/dashboard-stats${queryParams}`, {
                 headers: {
                     'Authorization': `Bearer ${session?.access_token}`
                 }
@@ -43,61 +104,257 @@ const Dashboard = () => {
         }
     };
 
-    // --- 2. SIMULACIÓN DE PRESUPUESTO (Mantener visualmente por ahora) ---
-    const TOTAL_BUDGET = 10000000; // $10,000,000 COP
-    const CONSUMED_AMOUNT = 4500000; // Simulación
-    const consumedPercentage = (CONSUMED_AMOUNT / TOTAL_BUDGET) * 100;
+    const handleDateFilter = (rangeType) => {
+        const now = new Date();
+        let start = null;
+        let end = new Date(); // Today
+
+        if (rangeType === 'month') {
+            // First day of current month
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (rangeType === 'quarter') {
+            // Last 3 months
+            start = new Date();
+            start.setMonth(now.getMonth() - 2);
+            start.setDate(1); // Start from 1st of that month
+        } else if (rangeType === 'year') {
+            // First day of current year
+            start = new Date(now.getFullYear(), 0, 1);
+        } else {
+            // All time
+            start = null;
+            end = null;
+        }
+
+        // Format to YYYY-MM-DD (local time)
+        // Note: toISOString uses UTC. Using local components is safer for dates.
+        const formatDate = (date) => {
+            if (!date) return null;
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        setDateRange({
+            start: formatDate(start),
+            end: formatDate(end),
+            label: rangeType
+        });
+    };
 
     const formatCurrency = (amount) => {
         if (amount === undefined || amount === null) return '-';
-        return amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('es-CO', { month: 'short', day: 'numeric', year: 'numeric' });
+    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+    // Custom Tooltip for Charts
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    border: '1px solid var(--color-border)',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)'
+                }}>
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', marginBottom: '4px' }}>{label}</p>
+                    <p style={{ color: '#fff', fontWeight: '600' }}>
+                        {formatCurrency(payload[0].value)}
+                    </p>
+                </div>
+            );
+        }
+        return null;
     };
 
-    const COLORS = ['#60A5FA', '#34D399', '#FBBF24', '#F472B6', '#A78BFA'];
-
-    if (loading) {
+    if (loading && !stats.total_reports) { // Only blocking loader initially
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem' }}>
-                <Loader className="animate-spin" size={32} color="var(--color-primary)" />
+            <div className="flex-center" style={{ height: '80vh' }}>
+                <div className="animate-spin" style={{ width: '32px', height: '32px', border: '3px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
             </div>
         );
     }
 
+    // Colors/Styles for active buttons
+    const getButtonStyle = (active) => ({
+        background: active ? 'var(--color-surface-hover)' : 'transparent',
+        color: active ? '#fff' : 'var(--color-text-muted)',
+        border: 'none',
+        padding: '6px 12px',
+        fontSize: '0.85rem',
+        borderRadius: '6px',
+        fontWeight: '500',
+        cursor: 'pointer',
+        transition: 'all 0.2s'
+    });
+
     return (
-        <div className="page-content">
-            <header className="page-header">
+        <div className="page-content" style={{ maxWidth: '1600px', margin: '0 auto', fontFamily: 'var(--font-sans)' }}>
+            <header className="page-header" style={{ marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1>Resumen</h1>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Panorama general de tu actividad</p>
+                    <h1 style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', letterSpacing: '-0.03em' }}>
+                        Dashboard Inteligente
+                    </h1>
+                    <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem', fontSize: '1.1rem' }}>Visión en tiempo real de tus finanzas</p>
                 </div>
-                <Link to="/new">
-                    <button className="btn-primary">
-                        <PlusCircle size={18} />
-                        <span>Nuevo Gasto</span>
-                    </button>
-                </Link>
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    {/* Sync Button */}
+                    {pendingCount > 0 && (
+                        <button
+                            onClick={handleSync}
+                            className="glass-card"
+                            style={{
+                                padding: '0.75rem 1rem',
+                                border: '1px solid #10b981',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                color: '#6ee7b7',
+                                transition: 'all 0.3s'
+                            }}
+                        >
+                            <RefreshCw size={18} className={syncing ? 'animate-spin' : ''} />
+                            <span>Sincronizar ({pendingCount})</span>
+                        </button>
+                    )}
+
+                    {/* Date Filters */}
+                    <div style={{ display: 'flex', background: 'rgba(30, 41, 59, 0.5)', padding: '4px', borderRadius: '12px', border: '1px solid var(--color-border)', backdropFilter: 'blur(4px)' }}>
+                        <button
+                            onClick={() => handleDateFilter('all')}
+                            style={getButtonStyle(dateRange.label === 'all')}>
+                            Todo
+                        </button>
+                        <button
+                            onClick={() => handleDateFilter('year')}
+                            style={getButtonStyle(dateRange.label === 'year')}>
+                            Este Año
+                        </button>
+                        <button
+                            onClick={() => handleDateFilter('quarter')}
+                            style={getButtonStyle(dateRange.label === 'quarter')}>
+                            Últ. 3 Meses
+                        </button>
+                        <button
+                            onClick={() => handleDateFilter('month')}
+                            style={getButtonStyle(dateRange.label === 'month')}>
+                            Este Mes
+                        </button>
+                    </div>
+
+                    <Link to="/new">
+                        <button className="btn-premium" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
+                            <PlusCircle size={20} />
+                            <span>Nuevo</span>
+                        </button>
+                    </Link>
+                </div>
             </header>
 
-            <div className="stats-grid">
-                <div className="card stat-card">
-                    <h3>Reportes Total</h3>
-                    <p className="stat-value">{stats.total_reports}</p>
+            {/* KPI GRID */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+
+                {/* Total Spent Card */}
+                <div className="glass-card" style={{ padding: '1.5rem', position: 'relative', overflow: 'hidden', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                    <div style={{ position: 'absolute', top: 0, right: 0, padding: '1rem', opacity: 0.1 }}>
+                        <DollarSign size={80} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                        <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
+                            <TrendingUp size={24} />
+                        </div>
+                        <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Gasto Total</span>
+                    </div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#fff', fontFamily: 'var(--font-heading)' }}>
+                        {formatCurrency(stats.total_spent)}
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Calendar size={16} />
+                        <span>
+                            {dateRange.label === 'all' ? 'Histórico Completo' :
+                                dateRange.label === 'month' ? 'Este Mes' :
+                                    dateRange.label === 'year' ? 'Este Año' : 'Últimos 90 Días'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Total Reports Card */}
+                <div className="glass-card" style={{ padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                        <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa' }}>
+                            <PieChartIcon size={24} />
+                        </div>
+                        <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Total Reportes</span>
+                    </div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#fff', fontFamily: 'var(--font-heading)' }}>
+                        {stats.total_reports}
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                        Registros procesados
+                    </div>
+                </div>
+
+                {/* Top Category Card */}
+                <div className="glass-card" style={{ padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                        <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' }}>
+                            <BarChart3 size={24} />
+                        </div>
+                        <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Mayor Categoría</span>
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: '700', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-heading)' }}>
+                        {stats.category_stats.length > 0 ? stats.category_stats.sort((a, b) => b.value - a.value)[0].name : '-'}
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                        Tendencia principal
+                    </div>
                 </div>
             </div>
 
-            {/* GRÁFICOS ROW */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+            {/* CHARTS GRID */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
 
-                {/* 1. PIE CHART (Expense Distribution) */}
-                <div className="card" style={{ padding: '1.5rem' }}>
-                    <h2 style={{ marginBottom: '1rem' }}>Distribución de Gastos</h2>
-                    {stats.category_stats && stats.category_stats.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={250}>
+                {/* Main Bar Chart - Monthly */}
+                <div style={{ gridColumn: 'span 8' }} className="responsive-col-12">
+                    <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '400px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)' }}>Evolución de Gastos</h3>
+                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={stats.monthly_stats} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <defs>
+                                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                <XAxis dataKey="month" stroke="#94a3b8" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value / 1000000}M`} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                <Bar dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Donut Chart - Categories */}
+                <div style={{ gridColumn: 'span 4' }} className="responsive-col-12">
+                    <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '400px' }}>
+                        <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', marginBottom: '1rem' }}>Por Categoría</h3>
+                        <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
                                     data={stats.category_stats}
@@ -107,75 +364,82 @@ const Dashboard = () => {
                                     outerRadius={80}
                                     paddingAngle={5}
                                     dataKey="value"
-                                    stroke="none"
                                 >
                                     {stats.category_stats.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0)" />
                                     ))}
                                 </Pie>
-                                <Tooltip
-                                    formatter={(value) => formatCurrency(value)}
-                                    contentStyle={{ backgroundColor: 'var(--color-surface)', border: 'none', borderRadius: '8px', color: 'var(--color-text)' }}
-                                />
-                                <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ fontSize: '0.8rem' }} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
-                    ) : (
-                        <p style={{ color: 'var(--color-text-muted)' }}>Sin datos de categorías.</p>
-                    )}
+                    </div>
                 </div>
 
-                {/* 2. LINE CHART (Monthly Activity) */}
-                <div className="card" style={{ padding: '1.5rem' }}>
-                    <h2 style={{ marginBottom: '1rem' }}>Reportes Mensuales</h2>
-                    {stats.monthly_stats.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={250}>
-                            <LineChart data={stats.monthly_stats}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                <XAxis dataKey="month" stroke="rgba(255,255,255,0.3)" style={{ fontSize: '0.75rem' }} tickLine={false} axisLine={false} />
-                                <YAxis stroke="rgba(255,255,255,0.3)" style={{ fontSize: '0.75rem' }} tickLine={false} axisLine={false} />
-                                <Tooltip contentStyle={{ backgroundColor: 'var(--color-surface)', border: 'none', borderRadius: '8px', color: 'var(--color-text)' }} />
-                                <Line type="monotone" dataKey="total" stroke="var(--color-primary)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <p style={{ color: 'var(--color-text-muted)' }}>No hay datos suficientes aún.</p>
-                    )}
+                {/* Horizontal Bar Chart - Top Clients */}
+                <div style={{ gridColumn: 'span 6' }} className="responsive-col-12">
+                    <div className="glass-card" style={{ padding: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem' }}>
+                            <Briefcase size={20} color="var(--color-primary)" />
+                            <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', margin: 0 }}>Top Clientes</h3>
+                        </div>
+                        {stats.client_stats && stats.client_stats.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {stats.client_stats.map((client, index) => (
+                                    <div key={index} style={{ marginBottom: '0.5rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.95rem' }}>
+                                            <span style={{ color: 'var(--color-text-main)' }}>{client.name}</span>
+                                            <span style={{ fontWeight: '600', color: 'var(--color-text-main)' }}>{formatCurrency(client.value)}</span>
+                                        </div>
+                                        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{
+                                                width: `${(client.value / stats.client_stats[0].value) * 100}%`,
+                                                height: '100%',
+                                                background: COLORS[index % COLORS.length],
+                                                borderRadius: '4px'
+                                            }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ color: 'var(--color-text-muted)' }}>Sin datos de clientes.</p>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            {/* TABLA DE APROBACIONES (USER ASKED FOR 'PENDING REVIEW' CONTEXT, BUT WE ARE SHOWING RECENT FOR NOW) */}
-            <div className="recent-activity" style={{ marginTop: '2rem' }}>
-                <h2>Actividad Reciente</h2>
-                <div className="card table-container">
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Tour / Descripción</th>
-                                <th>Fecha</th>
-                                <th>Monto</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stats.recent_activity.map((report) => (
-                                <tr key={report.id}>
-                                    <td>
-                                        <div style={{ fontWeight: '500' }}>{report.tour_id || 'Sin Tour ID'}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{report.summary_text?.substring(0, 30) || '...'}</div>
-                                    </td>
-                                    <td>{formatDate(report.created_at)}</td>
-                                    <td>{formatCurrency(report.amount)}</td>
-                                    <td>
-                                        <span className={`badge ${report.status === 'SENT' ? 'success' : 'default'}`}>
-                                            {report.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                {/* Recent Activity Table */}
+                <div style={{ gridColumn: 'span 6' }} className="responsive-col-12">
+                    <div className="glass-card" style={{ padding: '1.5rem', height: '100%' }}>
+                        <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', marginBottom: '1rem' }}>Actividad Reciente</h3>
+                        <div className="table-container" style={{ marginTop: '0.5rem' }}>
+                            <table className="data-table" style={{ width: '100%' }}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ textAlign: 'left', paddingBottom: '0.8rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DESCRIPCIÓN</th>
+                                        <th style={{ textAlign: 'right', paddingBottom: '0.8rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MONTO</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stats.recent_activity.map((report) => (
+                                        <tr key={report.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <td style={{ padding: '1rem 0' }}>
+                                                <div style={{ fontWeight: '500', color: 'var(--color-text-main)' }}>{report.tour_id || 'N/A'}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                                                    {new Date(report.created_at).toLocaleDateString()}
+                                                </div>
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontWeight: 'bold', color: 'var(--color-text-main)', fontFamily: 'monospace', fontSize: '1rem' }}>
+                                                {formatCurrency(report.amount)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+
             </div>
         </div>
     );

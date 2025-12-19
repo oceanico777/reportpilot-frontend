@@ -16,7 +16,7 @@ const Insights = () => {
 
     const fetchData = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
             const res = await fetch(`${API_URL}/reports/?limit=100`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });

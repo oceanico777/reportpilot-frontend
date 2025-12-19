@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 const FileUpload = ({ onUploadSuccess }) => {
+    const { session } = useAuth();
     const [dragActive, setDragActive] = useState(false);
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -8,7 +10,7 @@ const FileUpload = ({ onUploadSuccess }) => {
     const [success, setSuccess] = useState(false);
     const inputRef = useRef(null);
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
 
     const handleDrag = (e) => {
         e.preventDefault();
@@ -21,14 +23,16 @@ const FileUpload = ({ onUploadSuccess }) => {
     };
 
     const validateFile = (file) => {
-        const validTypes = ['text/csv', 'application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+        // Extended types to include jfif which maps to image/jpeg usually but validTypes check is stricter
+        const validTypes = ['text/csv', 'application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'image/jfif'];
         if (!validTypes.includes(file.type) &&
-            !file.name.endsWith('.csv') &&
-            !file.name.endsWith('.pdf') &&
-            !file.name.endsWith('.jpg') &&
-            !file.name.endsWith('.jpeg') &&
-            !file.name.endsWith('.png')) {
-            setError('Invalid file type. Please upload a CSV, PDF, JPG, or PNG file.');
+            !file.name.toLowerCase().endsWith('.csv') &&
+            !file.name.toLowerCase().endsWith('.pdf') &&
+            !file.name.toLowerCase().endsWith('.jpg') &&
+            !file.name.toLowerCase().endsWith('.jpeg') &&
+            !file.name.toLowerCase().endsWith('.png') &&
+            !file.name.toLowerCase().endsWith('.jfif')) {
+            setError('Invalid file type. Please upload a CSV, PDF, JPG, PNG, or JFIF file.');
             return false;
         }
         return true;
@@ -69,29 +73,101 @@ const FileUpload = ({ onUploadSuccess }) => {
         formData.append("file", fileToUpload);
 
         try {
-            const response = await fetch(`${API_URL}/reports/upload`, {
+            // 1. Initiate Upload (Async)
+            const headers = {};
+            if (session?.access_token) {
+                headers["Authorization"] = `Bearer ${session.access_token}`;
+            }
+
+            const response = await fetch(`${API_URL}/receipts/upload`, {
                 method: "POST",
+                headers: headers,
                 body: formData,
             });
 
             if (!response.ok) {
-                throw new Error("Upload failed");
+                const errorText = await response.text();
+                throw new Error(`Server Error (${response.status}): ${errorText}`);
             }
 
-            const data = await response.json();
-            console.log("Upload response:", data); // Debug log
-            setSuccess(true);
-            if (onUploadSuccess) {
-                // Pass both file_path and extracted_data to parent
-                onUploadSuccess(data.file_path, data.extracted_data);
+            const initialData = await response.json();
+            console.log("Upload initiated:", initialData);
+
+            if (initialData.status === 'PROCESSING' || initialData.status === 'PENDING') {
+                // 2. Poll for results
+                await pollForCompletion(initialData.id);
+            } else {
+                setSuccess(true);
+                if (onUploadSuccess) {
+                    onUploadSuccess(initialData.file_path, initialData.extracted_data);
+                }
+                setUploading(false);
             }
+
         } catch (err) {
-            console.error("Upload error:", err);
-            setError("Failed to upload file. Please try again.");
+            console.error("Upload error detail:", err);
+            setError(err.message || "Failed to upload file.");
             setFile(null);
-        } finally {
             setUploading(false);
         }
+    };
+
+    const pollForCompletion = async (receiptId) => {
+        const pollInterval = 2000; // 2 seconds
+        const maxAttempts = 30; // 60 seconds timeout
+        let attempts = 0;
+
+        const checkStatus = async () => {
+            try {
+                const headers = {};
+                if (session?.access_token) {
+                    headers["Authorization"] = `Bearer ${session.access_token}`;
+                }
+
+                const pollUrl = `${API_URL}/receipts/${receiptId}`;
+                console.log(`Polling URL: ${pollUrl}`);
+
+                const res = await fetch(pollUrl, {
+                    headers: headers
+                });
+
+                if (!res.ok) throw new Error("Polling failed");
+
+                const receipt = await res.json();
+                console.log("Polling status:", receipt.status);
+
+                if (receipt.status === 'COMPLETED' || receipt.status === 'PROCESSED') {
+                    setSuccess(true);
+                    setUploading(false);
+                    if (onUploadSuccess) {
+                        onUploadSuccess(receipt.storage_path, receipt.parsed_data);
+                    }
+                    return;
+                }
+
+                if (receipt.status === 'FAILED') {
+                    throw new Error("OCR Processing failed on server.");
+                }
+
+                if (attempts >= maxAttempts) {
+                    throw new Error("Processing timed out.");
+                }
+
+                attempts++;
+                setTimeout(checkStatus, pollInterval);
+
+            } catch (err) {
+                console.error("Polling error:", err);
+                // Alert the user to the exact error to help debugging
+                alert(`Polling Error: ${err.message}\nURL: ${API_URL}/receipts/${receiptId}`);
+                setError(err.message || "Error processing file.");
+                setUploading(false);
+                setFile(null);
+            }
+        };
+
+        // Start polling
+        setTimeout(checkStatus, 1000);
     };
 
     const onButtonClick = () => {
