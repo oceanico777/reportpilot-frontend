@@ -83,6 +83,8 @@ const Reports = () => {
             case 'SENT': return 'success';
             case 'DRAFT': return 'processing';
             case 'PROCESSED': return 'success';
+            case 'PENDING_REVIEW': return 'success';
+            case 'PROCESSING': return 'processing';
             case 'FAILED': return 'error';
             default: return 'default';
         }

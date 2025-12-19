@@ -17,6 +17,8 @@ class ReportStatus(str, enum.Enum):
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     DRAFT = "DRAFT"
+    PROCESSING = "PROCESSING"
+    PROCESSED = "PROCESSED"
     FAILED = "FAILED"
 
 def generate_uuid():

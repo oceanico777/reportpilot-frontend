@@ -21,31 +21,27 @@ def startup_event():
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
+    db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    # Create uploads directory if it doesn't exist
-    upload_dir = Path("uploads")
-    upload_dir.mkdir(parents=True, exist_ok=True)
+    from ..services.storage import storage_service
     
-    # Generate unique filename
-    file_extension = Path(file.filename).suffix
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = upload_dir / unique_filename
+    db_user = db.query(models.User).filter(models.User.id == current_user["id"]).first()
+    company_id = db_user.company_id if db_user else "default"
     
-    # Save file
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        # Return initial status
+        # Upload to Supabase instead of local
+        upload_result = storage_service.upload_file(file, company_id)
+        
         return {
-            "id": unique_filename, # Use filename as temporary ID
+            "id": upload_result["storage_path"], # Use storage path as ID
             "status": "PROCESSING",
-            "file_path": str(file_path),
-            "extracted_data": None # OCR will happen later
+            "file_path": upload_result["storage_path"],
+            "extracted_data": None
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not save file: {str(e)}")
+        logger.error(f"Upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Could not upload file: {str(e)}")
 
 @router.post("/generate", response_model=schemas.Report)
 def generate_report(
@@ -115,7 +111,7 @@ def generate_report(
         currency=currency,
         category=category,
         source_file_path=report.source_file_path,
-        status=models.ReportStatus.PENDING_REVIEW.value,
+        status=models.ReportStatus.PROCESSING.value,
         summary_text=summary,
         is_duplicate=True if existing_duplicate else False,
         potential_duplicate_of=existing_duplicate.id if existing_duplicate else None
@@ -126,7 +122,8 @@ def generate_report(
     db.refresh(db_report)
     
     # Always trigger report generation background task
-    background_tasks.add_task(report_generator.create_report, db_report.id, db)
+    # We use create_report but we will modify it to use the robust Gemini logic
+    background_tasks.add_task(report_generator.create_report, db_report.id)
     
     return db_report
 
