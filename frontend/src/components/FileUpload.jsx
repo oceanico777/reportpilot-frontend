@@ -114,7 +114,7 @@ const FileUpload = ({ onUploadSuccess }) => {
 
     const pollForCompletion = async (receiptId) => {
         const pollInterval = 2000; // 2 seconds
-        const maxAttempts = 30; // 60 seconds timeout
+        const maxAttempts = 60; // 120 seconds timeout (increased for stability)
         let attempts = 0;
 
         const checkStatus = async () => {
