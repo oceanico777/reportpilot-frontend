@@ -9,7 +9,9 @@ import {
   Calculator,
   LogOut,
   Briefcase,
-  Users
+  Users,
+  Menu,
+  X
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import './App.css'
@@ -33,10 +35,17 @@ const SidebarItem = ({ icon: Icon, label, to, active }) => {
   )
 }
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, close }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    if (window.innerWidth < 768 && close) {
+      close();
+    }
+  }, [location, close]);
 
   const handleLogout = async () => {
     await signOut();
@@ -44,7 +53,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <div className="logo-container">
           <img src={logo} alt="ReportPilot" style={{ height: '40px' }} />
@@ -137,6 +146,8 @@ import LandingPage from './pages/LandingPage'
 import TourClosure from './pages/TourClosure'
 
 function App() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
     <Router>
       <AuthProvider>
@@ -148,7 +159,21 @@ function App() {
             element={
               <ProtectedRoute>
                 <div className="app-layout">
-                  <Sidebar />
+                  {/* Mobile Toggle & Overlay */}
+                  <div
+                    className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`}
+                    onClick={() => setIsSidebarOpen(false)}
+                  />
+                  <button
+                    className="mobile-nav-toggle"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    aria-label="Toggle Menu"
+                  >
+                    {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+                  </button>
+
+                  <Sidebar isOpen={isSidebarOpen} close={() => setIsSidebarOpen(false)} />
+
                   <main className="main-content">
                     <Routes>
                       <Route path="/dashboard" element={<Dashboard />} />
