@@ -5,7 +5,7 @@ import { FileText, Download, Filter, Search, Calendar, Briefcase, XCircle } from
 const AccountantDashboard = () => {
     const { session } = useAuth();
     const [summary, setSummary] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
@@ -17,6 +17,9 @@ const AccountantDashboard = () => {
     useEffect(() => {
         if (session?.access_token) {
             fetchSummary();
+        } else {
+            // Optional: Handle case where session is not ready yet
+            console.log("AccountantDashboard: Waiting for session...");
         }
     }, [session, filters]);
 
