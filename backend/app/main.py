@@ -50,6 +50,8 @@ app = FastAPI(
 from fastapi.middleware.cors import CORSMiddleware
 
 
+from fastapi.staticfiles import StaticFiles
+
 # CORS configuration
 origins = [
     "http://localhost:5173",
@@ -65,6 +67,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount uploads directory for static file access
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
