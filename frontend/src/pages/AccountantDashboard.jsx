@@ -330,7 +330,7 @@ const AccountantDashboard = () => {
                                             <td style={{ padding: '0.8rem', textAlign: 'center' }}>
                                                 {tx.source_file_path ? (
                                                     <a
-                                                        href={tx.source_file_path.startsWith('http') ? tx.source_file_path : `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005'}${tx.source_file_path}`}
+                                                        href={tx.source_file_path.startsWith('http') ? tx.source_file_path : `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005'}${tx.source_file_path.startsWith('/') ? '' : '/'}${tx.source_file_path}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.8rem' }}
