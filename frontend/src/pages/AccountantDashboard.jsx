@@ -169,8 +169,9 @@ const AccountantDashboard = () => {
                             className="form-input"
                             style={{ width: 'auto', padding: '0.6rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'white' }}
                             value={filters.month}
-                            onChange={(e) => setFilters(prev => ({ ...prev, month: parseInt(e.target.value) }))}
+                            onChange={(e) => setFilters(prev => ({ ...prev, month: e.target.value ? parseInt(e.target.value) : '' }))}
                         >
+                            <option value="">Todos los Meses</option>
                             {Array.from({ length: 12 }, (_, i) => (
                                 <option key={i + 1} value={i + 1} style={{ background: 'var(--color-surface)' }}>{new Date(0, i).toLocaleString('es', { month: 'long' })}</option>
                             ))}
@@ -328,7 +329,12 @@ const AccountantDashboard = () => {
                                             <td style={{ padding: '0.8rem', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(tx.amount)}</td>
                                             <td style={{ padding: '0.8rem', textAlign: 'center' }}>
                                                 {tx.source_file_path ? (
-                                                    <a href={tx.source_file_path} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.8rem' }}>
+                                                    <a
+                                                        href={tx.source_file_path.startsWith('http') ? tx.source_file_path : `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005'}${tx.source_file_path}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.8rem' }}
+                                                    >
                                                         🔗 Ver Foto
                                                     </a>
                                                 ) : '-'}
