@@ -9,6 +9,7 @@ import magic
 import os
 import io
 import platform
+from datetime import datetime
 
 # Set Tesseract path for Windows
 if platform.system() == "Windows":
