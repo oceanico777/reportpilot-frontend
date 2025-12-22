@@ -32,9 +32,8 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
     return (
         <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
-                <div className="logo-container">
-                    <div className="logo-icon"><FileText size={24} color="white" /></div>
-                    <span className="logo-text">ReportPilot</span>
+                <div className="logo-container" style={{ paddingBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                    <img src="/logo.png" alt="ReportPilot" style={{ height: '50px', objectFit: 'contain' }} />
                 </div>
                 {user && (
                     <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
