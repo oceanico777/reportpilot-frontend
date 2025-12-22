@@ -20,8 +20,13 @@ class UserBase(BaseModel):
     email: str
     full_name: Optional[str] = None
 
-class UserCreate(UserBase):
-    pass
+class UserCreate(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = None
+    role: Optional[str] = "GUIDE"
+
+class UserCreateAdmin(UserCreate):
+    role: str # Explicitly required for admin creation
 
 class User(UserBase):
     id: str

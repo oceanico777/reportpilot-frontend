@@ -5,54 +5,38 @@ import { Users, Copy, Trash2, Shield, User } from 'lucide-react';
 const TeamManagement = () => {
     const { session } = useAuth();
     const [teamData, setTeamData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    const [newUser, setNewUser] = useState({ full_name: '', email: '', role: 'GUIDE' });
+    const [creating, setCreating] = useState(false);
 
-    useEffect(() => {
-        if (session?.access_token) {
-            fetchTeam();
-        }
-    }, [session]);
-
-    const fetchTeam = async () => {
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        setCreating(true);
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
-            const res = await fetch(`${API_URL}/admin/team`, {
-                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            const res = await fetch(`${API_URL}/admin/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify(newUser)
             });
+
             if (res.ok) {
-                const data = await res.json();
-                setTeamData(data);
+                alert("Usuario creado exitosamente. Puede iniciar sesión con este correo.");
+                setShowModal(false);
+                setNewUser({ full_name: '', email: '', role: 'GUIDE' });
+                fetchTeam();
             } else {
-                console.error("Failed to fetch team");
+                const err = await res.json();
+                alert(`Error: ${err.detail || 'No se pudo crear el usuario'}`);
             }
-        } catch (e) {
-            console.error(e);
+        } catch (error) {
+            console.error(error);
+            alert("Error de conexión");
         } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCopyCode = () => {
-        if (teamData?.invitation_code) {
-            navigator.clipboard.writeText(teamData.invitation_code);
-            alert("Código copiado al portapapeles");
-        }
-    };
-
-    const handleDeactivate = async (userId) => {
-        if (!confirm("¿Estás seguro de desactivar a este usuario?")) return;
-
-        try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
-            const res = await fetch(`${API_URL}/admin/deactivate/${userId}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${session?.access_token}` }
-            });
-            if (res.ok) {
-                fetchTeam(); // Refresh
-            }
-        } catch (e) {
-            console.error(e);
+            setCreating(false);
         }
     };
 
@@ -71,7 +55,7 @@ const TeamManagement = () => {
 
     return (
         <div className="page-content" style={{ maxWidth: '1400px', margin: '0 auto', fontFamily: 'var(--font-sans)' }}>
-            <header className="page-header" style={{ marginBottom: '3rem' }}>
+            <header className="page-header" style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', letterSpacing: '-0.03em' }}>
                         Gestión de Equipo
@@ -80,6 +64,14 @@ const TeamManagement = () => {
                         Administra tu equipo de trabajo en {teamData.company_name}
                     </p>
                 </div>
+                <button
+                    onClick={() => setShowModal(true)}
+                    className="btn-primary"
+                    style={{ display: 'flex', gap: '8px', padding: '0.75rem 1.5rem' }}
+                >
+                    <User size={20} />
+                    <span>Nuevo Miembro</span>
+                </button>
             </header>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem', alignItems: 'start' }}>
@@ -194,6 +186,71 @@ const TeamManagement = () => {
                 </div>
 
             </div>
+
+            {/* CREATE USER MODAL */}
+            {showModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1000,
+                    display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div className="card" style={{ width: '400px', maxWidth: '90%', padding: '2rem' }}>
+                        <h2 style={{ marginBottom: '1.5rem' }}>Registrar Nuevo Miembro</h2>
+                        <form onSubmit={handleCreateUser}>
+                            <div className="form-group">
+                                <label>Nombre Completo</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    required
+                                    value={newUser.full_name}
+                                    onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                                    placeholder="Ej. Juan Pérez"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Correo Electrónico</label>
+                                <input
+                                    type="email"
+                                    className="form-input"
+                                    required
+                                    value={newUser.email}
+                                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                                    placeholder="juan@ejemplo.com"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Rol</label>
+                                <select
+                                    className="form-input"
+                                    value={newUser.role}
+                                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                                >
+                                    <option value="GUIDE">Guía</option>
+                                    <option value="ADMIN">Administrador</option>
+                                </select>
+                            </div>
+
+                            <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)', padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                    disabled={creating}
+                                >
+                                    {creating ? 'Creando...' : 'Crear Usuario'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
