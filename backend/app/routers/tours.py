@@ -12,6 +12,7 @@ import base64
 import os
 import uuid
 from datetime import datetime
+from ..services.email_service import email_service
 # from ..routers.reports import get_tour_summary_data # REMOVED
 
 router = APIRouter(
@@ -128,5 +129,14 @@ async def close_tour(
     
     db.add(closure)
     db.commit()
+
+    # 7. Trigger Email Notification (Background or async simplified)
+    accountant_email = "contabilidad@turismo.com" # Placeholder recipient
+    email_service.send_tour_closure_email(
+        tour_id=tour_id,
+        recipient_email=accountant_email,
+        pdf_path=cloud_pdf_path,
+        guide_name=guide_name
+    )
 
     return {"status": "success", "message": "Tour closed successfully", "pdf_url": pdf_path}

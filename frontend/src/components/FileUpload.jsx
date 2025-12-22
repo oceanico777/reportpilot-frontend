@@ -67,8 +67,26 @@ const FileUpload = ({ onUploadSuccess }) => {
         uploadFile(selectedFile);
     };
 
+    const [progress, setProgress] = useState(0);
+
+    const simulateProgress = () => {
+        setProgress(0);
+        let current = 0;
+        const interval = setInterval(() => {
+            current += Math.random() * 20; // Random jump 0-20%
+            if (current > 90) {
+                current = 90; // Cap at 90 until real finish
+                clearInterval(interval);
+            }
+            setProgress(Math.round(current));
+        }, 200); // Update every 200ms
+        return interval;
+    };
+
     const uploadFile = async (fileToUpload) => {
         setUploading(true);
+        const progressInterval = simulateProgress();
+
         const formData = new FormData();
         formData.append("file", fileToUpload);
 
@@ -93,18 +111,28 @@ const FileUpload = ({ onUploadSuccess }) => {
             const initialData = await response.json();
             console.log("Upload initiated:", initialData);
 
+            // If we get here, upload meant 100% sent to server
+            // But we might be strictly processing. 95% is honest.
+            setProgress(95);
+
             if (initialData.status === 'PROCESSING' || initialData.status === 'PENDING') {
                 // 2. Poll for results
-                await pollForCompletion(initialData.id);
+                await pollForCompletion(initialData.id, progressInterval);
             } else {
-                setSuccess(true);
-                if (onUploadSuccess) {
-                    onUploadSuccess(initialData.file_path, initialData.extracted_data);
-                }
-                setUploading(false);
+                clearInterval(progressInterval);
+                setProgress(100);
+                // Tiny delay to show 100% before switching view
+                setTimeout(() => {
+                    setSuccess(true);
+                    if (onUploadSuccess) {
+                        onUploadSuccess(initialData.file_path, initialData.extracted_data);
+                    }
+                    setUploading(false);
+                }, 400);
             }
 
         } catch (err) {
+            clearInterval(progressInterval);
             console.error("Upload error detail:", err);
             setError(err.message || "Failed to upload file.");
             setFile(null);
@@ -112,7 +140,7 @@ const FileUpload = ({ onUploadSuccess }) => {
         }
     };
 
-    const pollForCompletion = async (receiptId) => {
+    const pollForCompletion = async (receiptId, progressInterval) => {
         const pollInterval = 2000; // 2 seconds
         const maxAttempts = 60; // 120 seconds timeout (increased for stability)
         let attempts = 0;
@@ -137,11 +165,15 @@ const FileUpload = ({ onUploadSuccess }) => {
                 console.log("Polling status:", receipt.status);
 
                 if (receipt.status === 'COMPLETED' || receipt.status === 'PROCESSED') {
-                    setSuccess(true);
-                    setUploading(false);
-                    if (onUploadSuccess) {
-                        onUploadSuccess(receipt.storage_path, receipt.parsed_data);
-                    }
+                    clearInterval(progressInterval);
+                    setProgress(100);
+                    setTimeout(() => {
+                        setSuccess(true);
+                        setUploading(false);
+                        if (onUploadSuccess) {
+                            onUploadSuccess(receipt.storage_path, receipt.parsed_data);
+                        }
+                    }, 400);
                     return;
                 }
 
@@ -157,9 +189,10 @@ const FileUpload = ({ onUploadSuccess }) => {
                 setTimeout(checkStatus, pollInterval);
 
             } catch (err) {
+                clearInterval(progressInterval);
                 console.error("Polling error:", err);
                 // Alert the user to the exact error to help debugging
-                alert(`Polling Error: ${err.message}\nURL: ${API_URL}/receipts/${receiptId}`);
+                // alert(`Polling Error: ${err.message}\nURL: ${API_URL}/receipts/${receiptId}`);
                 setError(err.message || "Error processing file.");
                 setUploading(false);
                 setFile(null);
@@ -222,19 +255,22 @@ const FileUpload = ({ onUploadSuccess }) => {
                         <p>Uploading {file?.name}...</p>
                         <div className="progress-bar" style={{
                             width: '100%',
-                            height: '4px',
-                            background: 'var(--color-border)',
-                            marginTop: '10px',
-                            borderRadius: '2px',
+                            height: '6px',
+                            background: 'rgba(255,255,255,0.1)',
+                            marginTop: '12px',
+                            borderRadius: '3px',
                             overflow: 'hidden'
                         }}>
                             <div style={{
-                                width: '50%',
+                                width: `${progress}%`,
                                 height: '100%',
-                                background: 'var(--color-primary)',
-                                animation: 'progress 1s infinite linear'
+                                background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
+                                transition: 'width 0.2s ease-out'
                             }}></div>
                         </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '8px' }}>
+                            {progress < 100 ? 'Subiendo y Analizando...' : '¡Listo!'}
+                        </p>
                     </div>
                 ) : success ? (
                     <div className="upload-success" style={{ color: 'var(--color-success)' }}>

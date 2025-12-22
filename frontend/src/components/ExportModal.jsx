@@ -25,7 +25,10 @@ const ExportModal = ({ isOpen, onClose }) => {
                 }
             });
 
-            if (!response.ok) throw new Error('Export failed');
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || 'Export failed');
+            }
 
             // Handle Blob download
             const blob = await response.blob();
@@ -42,7 +45,7 @@ const ExportModal = ({ isOpen, onClose }) => {
             onClose();
         } catch (error) {
             console.error("Download error:", error);
-            alert("Hubo un error al generar el archivo. Por favor intenta de nuevo.");
+            alert(`Error: ${error.message || "Hubo un error al generar el archivo."}`);
         } finally {
             setDownloading(false);
         }

@@ -5,7 +5,11 @@ import { FileText, Download, Filter, Search, Calendar, Briefcase, XCircle } from
 const AccountantDashboard = () => {
     const { session } = useAuth();
     const [summary, setSummary] = useState([]);
+    const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
+    const [viewMode, setViewMode] = useState('transactions'); // Default to transactions view as requested
+
     const [filters, setFilters] = useState({
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
@@ -13,15 +17,18 @@ const AccountantDashboard = () => {
     });
     const [exporting, setExporting] = useState(false);
 
-    // Fetch Data
+    // Fetch Data based on view mode
     useEffect(() => {
         if (session?.access_token) {
+            // Always fetch summary for the KPI cards (Total Month)
             fetchSummary();
-        } else {
-            // Optional: Handle case where session is not ready yet
-            console.log("AccountantDashboard: Waiting for session...");
+
+            // Then fetch list if in transactions mode
+            if (viewMode === 'transactions') {
+                fetchTransactions();
+            }
         }
-    }, [session, filters]);
+    }, [session, filters, viewMode]);
 
     const fetchSummary = async () => {
         setLoading(true);
@@ -45,6 +52,31 @@ const AccountantDashboard = () => {
             console.error("Error fetching summary:", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchTransactions = async () => {
+        setLoadingTransactions(true);
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const query = new URLSearchParams({
+                month: filters.month,
+                year: filters.year,
+                limit: 100 // Fetch last 100 for speed
+            }).toString();
+
+            const res = await fetch(`${API_URL}/reports/admin/transactions?${query}`, {
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setTransactions(data);
+            }
+        } catch (err) {
+            console.error("Error fetching transactions:", err);
+        } finally {
+            setLoadingTransactions(false);
         }
     };
 
@@ -75,12 +107,37 @@ const AccountantDashboard = () => {
         }
     };
 
+    const handleExportXlsx = async (tourId) => {
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const res = await fetch(`${API_URL}/exports/tours/${tourId}/xlsx`, {
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Gastos_${tourId}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Error al descargar el archivo Excel");
+            }
+        } catch (err) {
+            console.error("Excel export error:", err);
+            alert("Error de conexión al exportar Excel");
+        }
+    };
+
     const formatCurrency = (val) => {
         return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val);
     };
 
     // Calculate Totals for Header
-    const totalMonth = summary.reduce((acc, curr) => acc + curr.total_amount, 0);
+    const totalMonth = summary.reduce((acc, curr) => acc + (Number(curr.total_expenses) || 0), 0);
 
     return (
         <div className="page-content" style={{ maxWidth: '1600px', margin: '0 auto', fontFamily: 'var(--font-sans)' }}>
@@ -158,136 +215,130 @@ const AccountantDashboard = () => {
                 </button>
             </div>
 
-            {/* Data Table */}
+            {/* VIEW TOGGLE */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+                <button
+                    onClick={() => setViewMode('tours')}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        background: viewMode === 'tours' ? 'var(--color-primary)' : 'transparent',
+                        color: viewMode === 'tours' ? 'white' : 'var(--color-text-muted)',
+                        border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '500'
+                    }}
+                >
+                    📁 Resumen por Tour
+                </button>
+                <button
+                    onClick={() => setViewMode('transactions')}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        background: viewMode === 'transactions' ? 'var(--color-primary)' : 'transparent',
+                        color: viewMode === 'transactions' ? 'white' : 'var(--color-text-muted)',
+                        border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '500'
+                    }}
+                >
+                    ⚡ Últimos Movimientos (Sábana)
+                </button>
+            </div>
+
+            {/* Data Table Area */}
             <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
-                <div className="table-container">
-                    <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)' }}>
-                            <tr>
-                                <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOUR ID</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>GUÍA</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💰 ANTICIPO</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💵 RECAUDO</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📉 GASTOS</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🍽️ REST</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎟️ ATRAC</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-accent)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚖️ DIFERENCIA</th>
-                                <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ESTADO</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
+
+                {/* VISTA: TOURS SUMMARY */}
+                {viewMode === 'tours' && (
+                    <div className="table-container">
+                        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)' }}>
                                 <tr>
-                                    <td colSpan="8" style={{ textAlign: 'center', padding: '3rem' }}>
-                                        <div className="animate-spin" style={{ display: 'inline-block', width: '30px', height: '30px', border: '3px solid var(--color-accent)', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
-                                    </td>
+                                    <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOUR ID</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>GUÍA</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💰 ANTICIPO</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💵 RECAUDO</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📉 GASTOS</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚖️ DIFERENCIA</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ESTADO</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ACCIONES</th>
                                 </tr>
-                            ) : summary.length === 0 ? (
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '3rem' }}><div className="animate-spin" style={{ display: 'inline-block', width: '30px', height: '30px', border: '3px solid var(--color-accent)', borderTopColor: 'transparent', borderRadius: '50%' }}></div></td></tr>
+                                ) : summary.length === 0 ? (
+                                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-muted)' }}>No hay tours registrados.</td></tr>
+                                ) : (
+                                    summary.map((tour, idx) => {
+                                        const anticipo = tour.total_advances || 0;
+                                        const recaudo = tour.total_collections || 0;
+                                        const gastos = tour.total_expenses || 0;
+                                        const diferencia = (anticipo + recaudo) - gastos;
+                                        return (
+                                            <tr key={idx} className="table-row-hover" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                <td style={{ padding: '1rem' }}>{tour.tour_id}</td>
+                                                <td style={{ padding: '1rem' }}>{tour.guide_name || 'Guía'}</td>
+                                                <td style={{ padding: '1rem', textAlign: 'right', color: '#fbbf24' }}>{formatCurrency(anticipo)}</td>
+                                                <td style={{ padding: '1rem', textAlign: 'right', color: '#6ee7b7' }}>{formatCurrency(recaudo)}</td>
+                                                <td style={{ padding: '1rem', textAlign: 'right' }}>{formatCurrency(gastos)}</td>
+                                                <td style={{ padding: '1rem', textAlign: 'right', color: diferencia < 0 ? '#93c5fd' : '#fca5a5' }}>
+                                                    {formatCurrency(diferencia)}
+                                                </td>
+                                                <td style={{ padding: '1rem' }}><span className="badge success">Activo</span></td>
+                                                <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                    <button onClick={() => handleExportXlsx(tour.tour_id)} className="btn-icon"><Download size={16} /></button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* VISTA: MOVIMIENTOS (SÁBANA) */}
+                {viewMode === 'transactions' && (
+                    <div className="table-container">
+                        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead style={{ background: 'rgba(56, 189, 248, 0.1)', backdropFilter: 'blur(8px)' }}>
                                 <tr>
-                                    <td colSpan="8" style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-muted)' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                            <Briefcase size={40} opacity={0.5} />
-                                            <span>No hay registros para este periodo.</span>
-                                        </div>
-                                    </td>
+                                    <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>FECHA</th>
+                                    <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>TOUR REF</th>
+                                    <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>PROVEEDOR</th>
+                                    <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>CATEGORÍA</th>
+                                    <th style={{ padding: '1rem', textAlign: 'right', color: '#38bdf8' }}>MONTO</th>
+                                    <th style={{ padding: '1rem', textAlign: 'center', color: '#38bdf8' }}>EVIDENCIA</th>
                                 </tr>
-                            ) : (
-                                summary.map((tour, idx) => {
-                                    // Calculate Logic
-                                    const anticipo = tour.total_advances || 0;
-                                    const recaudo = tour.total_collections || 0;
-                                    const gastos = tour.total_expenses || 0;
-                                    const diferencia = (anticipo + recaudo) - gastos; // Positive = Guide has money. Negative = Guide owed money.
-
-                                    let statusColor = '#94a3b8';
-                                    let statusText = 'Pendiente';
-                                    let diffColor = 'white';
-
-                                    if (diferencia > 0) {
-                                        statusColor = '#ef4444'; // Red
-                                        statusText = 'REINTEGRAR';
-                                        diffColor = '#fca5a5';
-                                    } else if (diferencia < 0) {
-                                        statusColor = '#3b82f6'; // Blue
-                                        statusText = 'REEMBOLSAR';
-                                        diffColor = '#93c5fd';
-                                    } else {
-                                        statusColor = '#10b981'; // Green
-                                        statusText = 'CUADRE OK';
-                                        diffColor = '#86efac';
-                                    }
-
-                                    return (
-                                        <tr key={idx} className="table-row-hover" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }}>
-                                            <td style={{ padding: '1.2rem', fontWeight: '500', fontFamily: 'monospace', fontSize: '1rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    {tour.tour_id}
-                                                    {tour.has_duplicates && (
-                                                        <div title="Posibles duplicados" style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', padding: '2px' }}>
-                                                            <XCircle size={14} />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            <td style={{ padding: '1.2rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--gradient-ocean)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#fff' }}>
-                                                        {tour.guide_name ? tour.guide_name.charAt(0).toUpperCase() : 'G'}
-                                                    </div>
-                                                    <span style={{ fontWeight: '500' }}>{tour.guide_name || 'Desconocido'}</span>
-                                                </div>
-                                            </td>
-
-                                            {/* ANTICIPO */}
-                                            <td style={{ padding: '1.2rem', textAlign: 'right', color: '#fbbf24', fontFamily: 'monospace', fontWeight: '600' }}>
-                                                {formatCurrency(anticipo)}
-                                            </td>
-
-                                            {/* RECAUDO */}
-                                            <td style={{ padding: '1.2rem', textAlign: 'right', color: '#6ee7b7', fontFamily: 'monospace', fontWeight: '600' }}>
-                                                {formatCurrency(recaudo)}
-                                            </td>
-
-                                            {/* GASTOS TOTALES */}
-                                            <td style={{ padding: '1.2rem', textAlign: 'right', color: 'white', fontFamily: 'monospace' }}>
-                                                {formatCurrency(gastos)}
-                                            </td>
-
-                                            {/* DESGLOSE (Simplificado) */}
-                                            <td style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>
-                                                {formatCurrency(tour.categories['🍽️ Restaurante'] || 0)}
-                                            </td>
-                                            <td style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>
-                                                {formatCurrency(tour.categories['🎟️ Atractivo'] || 0)}
-                                            </td>
-
-                                            {/* DIFERENCIA */}
-                                            <td style={{ padding: '1.2rem', textAlign: 'right', fontWeight: 'bold', color: diffColor, fontFamily: 'monospace', fontSize: '1.05rem', background: `rgba(${diferencia > 0 ? '239, 68, 68' : diferencia < 0 ? '59, 130, 246' : '16, 185, 129'}, 0.05)` }}>
-                                                {formatCurrency(diferencia)}
-                                            </td>
-
-                                            {/* ESTADO */}
-                                            <td style={{ padding: '1.2rem' }}>
-                                                <span style={{
-                                                    fontWeight: '700',
-                                                    color: statusColor,
-                                                    background: `${statusColor}20`, // 20 hex alpha = ~12% opacity
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.75rem',
-                                                    letterSpacing: '0.05em'
-                                                }}>
-                                                    {statusText}
+                            </thead>
+                            <tbody>
+                                {loadingTransactions ? (
+                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '3rem' }}>Cargando movimientos...</td></tr>
+                                ) : transactions.length === 0 ? (
+                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No hay movimientos recientes.</td></tr>
+                                ) : (
+                                    transactions.map((tx) => (
+                                        <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                            <td style={{ padding: '0.8rem' }}>{new Date(tx.created_at).toLocaleDateString()}</td>
+                                            <td style={{ padding: '0.8rem', fontFamily: 'monospace' }}>{tx.tour_id}</td>
+                                            <td style={{ padding: '0.8rem' }}>{tx.vendor || 'N/A'}</td>
+                                            <td style={{ padding: '0.8rem' }}>
+                                                <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.1)' }}>
+                                                    {tx.category || 'Varios'}
                                                 </span>
                                             </td>
+                                            <td style={{ padding: '0.8rem', textAlign: 'right', fontWeight: 'bold' }}>{formatCurrency(tx.amount)}</td>
+                                            <td style={{ padding: '0.8rem', textAlign: 'center' }}>
+                                                {tx.source_file_path ? (
+                                                    <a href={tx.source_file_path} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.8rem' }}>
+                                                        🔗 Ver Foto
+                                                    </a>
+                                                ) : '-'}
+                                            </td>
                                         </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

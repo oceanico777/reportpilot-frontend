@@ -408,7 +408,9 @@ def get_dashboard_stats(
     client_stats = client_stats[:5] # Top 5
     
     recent_activity = []
-    for r in reports[:5]: # Just take first 5 from query result (ideally sort by date desc first)
+    # Sort reports by date desc for recent activity
+    sorted_reports = sorted(reports, key=lambda x: x.created_at, reverse=True)
+    for r in sorted_reports[:5]:
          recent_activity.append({
              "id": r.id,
              "tour_id": r.tour_id,
@@ -416,6 +418,55 @@ def get_dashboard_stats(
              "amount": int(r.amount) if r.amount else 0,
              "category": r.category
          })
+
+    # --- NEW: Active Tour Logic ---
+    active_tour = None
+    latest_report = db.query(models.Report).filter(
+        models.Report.company_id == company_id,
+        models.Report.tour_id != None
+    ).order_by(models.Report.created_at.desc()).first()
+
+    if latest_report:
+        # Check if closed
+        is_closed = db.query(models.TourClosure).filter(
+            models.TourClosure.tour_id == latest_report.tour_id, 
+            models.TourClosure.company_id == company_id
+        ).first()
+        
+        if not is_closed:
+            # Calculate tour summary
+            tour_reports = db.query(models.Report).filter(
+                models.Report.tour_id == latest_report.tour_id,
+                models.Report.company_id == company_id
+            ).all()
+            
+            tour_spent = 0
+            tour_advances = 0
+            for tr in tour_reports:
+                amt = tr.amount or 0
+                if tr.category in ["ANTICIPO_RECIBIDO", "RECAUDO_CLIENTE"]:
+                    tour_advances += amt
+                else:
+                    tour_spent += amt
+            
+            # Get category-specific budgets
+            budgets = db.query(models.TourBudget).filter(
+                models.TourBudget.tour_id == latest_report.tour_id,
+                models.TourBudget.company_id == company_id
+            ).all()
+            
+            total_budget = sum([b.budget_amount for b in budgets])
+            # Use advances as fallback if no budget defined
+            if total_budget == 0:
+                total_budget = tour_advances
+            
+            active_tour = {
+                "tour_id": latest_report.tour_id,
+                "total_spent": int(tour_spent),
+                "total_budget": int(total_budget),
+                "remaining": int(total_budget - tour_spent),
+                "progress": min(100, int((tour_spent / total_budget) * 100)) if total_budget > 0 else 0
+            }
 
     return {
         "total_reports": total_reports,
@@ -425,5 +476,28 @@ def get_dashboard_stats(
         "monthly_stats": monthly_stats,
         "client_stats": client_stats,
         "recent_activity": recent_activity,
-        "category_stats": category_stats
+        "category_stats": category_stats,
+        "active_tour": active_tour
     }
+
+@router.get("/admin/transactions", response_model=List[schemas.Report])
+def list_admin_transactions(
+    month: Optional[int] = Query(None),
+    year: Optional[int] = Query(None),
+    limit: int = 100,
+    skip: int = 0,
+    db: Session = Depends(get_db),
+    company_id: str = Depends(get_user_company)
+):
+    """
+    Returns a flat list of ALL transactions for the company, filtered by period.
+    Designed for the 'Sábana de Datos' view in Accountant Dashboard.
+    """
+    query = db.query(models.Report).filter(models.Report.company_id == company_id)
+    
+    if month:
+        query = query.filter(models.Report.month == month)
+    if year:
+        query = query.filter(models.Report.year == year)
+        
+    return query.order_by(models.Report.created_at.desc()).offset(skip).limit(limit).all()

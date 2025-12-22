@@ -123,6 +123,9 @@ def export_gastos(
     # 2. GENERATE FILE
     
     if format == "pdf":
+        if HTML is None:
+             raise HTTPException(status_code=400, detail="PDF generation is currently disabled on this server (missing libraries). Please try Excel export.")
+
         context = {
             "user_name": current_user["full_name"],
             "start_date": start_date or "Inicio",
@@ -192,3 +195,65 @@ def export_gastos(
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
+@router.get("/tours/{tour_id}/xlsx")
+def export_tour_xlsx(
+    tour_id: str,
+    db: Session = Depends(get_db),
+    company_id: str = Depends(get_user_company)
+):
+    # 1. Query Data Scoped to Company and Tour
+    # We exclude internal categories like advances and collections for the expense sheet
+    reports = db.query(models.Report).filter(
+        models.Report.company_id == company_id,
+        models.Report.tour_id == tour_id
+    ).filter(
+        ~models.Report.category.in_(["ANTICIPO_RECIBIDO", "RECAUDO_CLIENTE"])
+    ).order_by(models.Report.created_at.asc()).all()
+    
+    # 2. Prepare XLSX
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Gastos Tour {tour_id}"
+    
+    # Headers
+    headers = ["Fecha", "Comercio / Proveedor", "NIT / ID", "Categoría", "Monto (COP)", "Comentarios"]
+    ws.append(headers)
+    
+    # Style Headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4F46E5", end_color="4F46E5", fill_type="solid")
+    
+    for cell in ws[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+
+    # Rows
+    for r in reports:
+        ws.append([
+            r.created_at.strftime("%Y-%m-%d") if r.created_at else "N/A",
+            r.vendor or "N/A",
+            r.vendor_nit or "N/A",
+            r.category or "📦 Otros",
+            r.amount or 0,
+            r.summary_text or ""
+        ])
+        
+    # Column Widths
+    ws.column_dimensions['A'].width = 15
+    ws.column_dimensions['B'].width = 30
+    ws.column_dimensions['C'].width = 20
+    ws.column_dimensions['D'].width = 20
+    ws.column_dimensions['E'].width = 15
+    ws.column_dimensions['F'].width = 40
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"Gastos_{tour_id}.xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

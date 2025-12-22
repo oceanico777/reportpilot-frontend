@@ -323,6 +323,42 @@ const Dashboard = () => {
                 </div>
             </div>
 
+            {/* ACTIVE TOUR BUDGET BAR */}
+            {stats.active_tour && (
+                <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '2rem', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>
+                                <Briefcase size={20} />
+                            </div>
+                            <h3 style={{ fontSize: '1.2rem', color: '#fff', margin: 0 }}>Presupuesto Tour: <span style={{ color: '#10b981' }}>{stats.active_tour.tour_id}</span></h3>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Estado Actual: </span>
+                            <span style={{ fontSize: '1.1rem', fontWeight: '600', color: stats.active_tour.remaining < 0 ? '#ef4444' : '#10b981' }}>
+                                {stats.active_tour.remaining < 0 ? 'Excedido' : formatCurrency(stats.active_tour.remaining)}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style={{ height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden', marginBottom: '0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{
+                            height: '100%',
+                            width: `${stats.active_tour.progress}%`,
+                            background: stats.active_tour.progress > 90 ? 'linear-gradient(90deg, #f87171, #ef4444)' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                            borderRadius: '6px',
+                            transition: 'width 1s ease-in-out',
+                            boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)'
+                        }}></div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                        <span>Gastado: <span style={{ color: '#fff' }}>{formatCurrency(stats.active_tour.total_spent)}</span></span>
+                        <span>Capacidad: <span style={{ color: '#fff' }}>{formatCurrency(stats.active_tour.total_budget)}</span></span>
+                    </div>
+                </div>
+            )}
+
             {/* CHARTS GRID */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
 

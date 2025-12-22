@@ -194,10 +194,14 @@ const NewReport = () => {
             const data = await res.json();
             setSuccess(`✅ Reporte enviado con éxito. ID: ${data.id}`);
 
-            // Reset categories but keep metadata for fast batching if needed
-            setSelectedCategory(null);
-            setExtractedData(null);
-            setSourceFilePath('');
+            // AUTO-RESET FORM AFTER 3 SECONDS
+            setTimeout(() => {
+                setSuccess('');
+                setSelectedCategory(null);
+                setExtractedData(null);
+                setSourceFilePath(''); // This triggers FileUpload to reset if bound correctly, or we might need a key to force re-render
+                // Note: tourId and clientName remains for continuous entry
+            }, 3000);
 
             // ACTUALIZAR SALDO DESPUÉS DE ENVIAR (Optimistic Update ideal, pero fetch es seguro)
             fetchBalance();
@@ -385,7 +389,7 @@ const NewReport = () => {
 
                     <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.2 }}>
                         <label className="input-label" style={{ marginBottom: '0.5rem', display: 'block' }}>1. Sube tu Recibo (Foto o PDF)</label>
-                        <FileUpload onUploadSuccess={handleUploadSuccess} />
+                        <FileUpload key={sourceFilePath || 'empty'} onUploadSuccess={handleUploadSuccess} />
                     </motion.div>
 
                     <AnimatePresence>
