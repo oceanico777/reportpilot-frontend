@@ -306,6 +306,7 @@ const AccountantDashboard = () => {
                                     <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>CATEGORÍA</th>
                                     <th style={{ padding: '1rem', textAlign: 'right', color: '#38bdf8' }}>MONTO</th>
                                     <th style={{ padding: '1rem', textAlign: 'center', color: '#38bdf8' }}>EVIDENCIA</th>
+                                    <th style={{ padding: '1rem', textAlign: 'center', color: '#38bdf8' }}>AUDITORÍA</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -331,6 +332,48 @@ const AccountantDashboard = () => {
                                                         🔗 Ver Foto
                                                     </a>
                                                 ) : '-'}
+                                            </td>
+                                            <td style={{ padding: '0.8rem', textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                {tx.status === 'APPROVED' ? (
+                                                    <span style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 'bold' }}>✅ Aprobado</span>
+                                                ) : tx.status === 'REJECTED' ? (
+                                                    <span style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: 'bold' }}>❌ Rechazado</span>
+                                                ) : (
+                                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                                        <button
+                                                            onClick={async () => {
+                                                                const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+                                                                try {
+                                                                    await fetch(`${API_URL}/reports/${tx.id}/approve`, {
+                                                                        method: 'PATCH',
+                                                                        headers: { 'Authorization': `Bearer ${session.access_token}` }
+                                                                    });
+                                                                    setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, status: 'APPROVED' } : t));
+                                                                } catch (err) { console.error(err); }
+                                                            }}
+                                                            style={{ border: 'none', background: 'rgba(74, 222, 128, 0.2)', color: '#4ade80', cursor: 'pointer', padding: '6px', borderRadius: '4px' }}
+                                                            title="Aprobar"
+                                                        >
+                                                            ✅
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+                                                                try {
+                                                                    await fetch(`${API_URL}/reports/${tx.id}/reject`, {
+                                                                        method: 'PATCH',
+                                                                        headers: { 'Authorization': `Bearer ${session.access_token}` }
+                                                                    });
+                                                                    setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, status: 'REJECTED' } : t));
+                                                                } catch (err) { console.error(err); }
+                                                            }}
+                                                            style={{ border: 'none', background: 'rgba(248, 113, 113, 0.2)', color: '#f87171', cursor: 'pointer', padding: '6px', borderRadius: '4px' }}
+                                                            title="Rechazar"
+                                                        >
+                                                            ❌
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

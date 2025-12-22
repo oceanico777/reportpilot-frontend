@@ -80,10 +80,12 @@ const Reports = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'SENT': return 'success';
-            case 'DRAFT': return 'processing';
+            case 'SENT': return 'processing';
+            case 'DRAFT': return 'default';
             case 'PROCESSED': return 'success';
-            case 'PENDING_REVIEW': return 'success';
+            case 'APPROVED': return 'success';
+            case 'REJECTED': return 'error';
+            case 'PENDING_REVIEW': return 'processing';
             case 'PROCESSING': return 'processing';
             case 'FAILED': return 'error';
             default: return 'default';
