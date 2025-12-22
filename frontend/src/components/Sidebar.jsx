@@ -12,20 +12,25 @@ const SidebarItem = ({ icon: Icon, label, to, active }) => {
     );
 };
 
-const Sidebar = ({ toggleTheme, currentTheme }) => {
+const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { signOut, user } = useAuth();
 
     const handleLogout = async () => {
         await signOut();
+        if (close) close(); // Close sidebar if open
         navigate('/login');
+    };
+
+    const handleLinkClick = () => {
+        if (close) close();
     };
 
     const ThemeIcon = currentTheme === 'dark-mode' ? Sun : Moon;
 
     return (
-        <aside className="sidebar">
+        <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
                 <div className="logo-container">
                     <div className="logo-icon"><FileText size={24} color="white" /></div>
@@ -41,15 +46,21 @@ const Sidebar = ({ toggleTheme, currentTheme }) => {
             <nav className="sidebar-nav">
                 <div className="nav-section">
                     <span className="nav-label">MAIN</span>
-                    <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/" active={location.pathname === '/'} />
-                    <SidebarItem icon={FileText} label="Reports" to="/reports" active={location.pathname.startsWith('/reports')} />
-                    <SidebarItem icon={PlusCircle} label="New Report" to="/new" active={location.pathname === '/new'} />
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/" active={location.pathname === '/' || location.pathname === '/admin/dashboard'} />
+                    </div>
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={FileText} label="Reports" to="/reports" active={location.pathname.startsWith('/reports')} />
+                    </div>
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={PlusCircle} label="New Report" to="/new" active={location.pathname === '/new'} />
+                    </div>
                 </div>
 
                 <div className="nav-section mt-auto">
                     {/* Dark/Light Mode Toggle */}
                     <button
-                        onClick={toggleTheme}
+                        onClick={() => { toggleTheme(); if (close) close(); }}
                         className="sidebar-item"
                         style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                     >
@@ -57,7 +68,9 @@ const Sidebar = ({ toggleTheme, currentTheme }) => {
                         <span>{currentTheme === 'dark-mode' ? 'Light Mode' : 'Dark Mode'}</span>
                     </button>
 
-                    <SidebarItem icon={Settings} label="Settings" to="/settings" active={location.pathname === '/settings'} />
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={Settings} label="Settings" to="/settings" active={location.pathname === '/settings'} />
+                    </div>
                     <button onClick={handleLogout} className="sidebar-item" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <LogOut size={20} />
                         <span>Logout</span>
