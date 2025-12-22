@@ -332,88 +332,147 @@ def generate_clearance_act(tour_data, signature_path):
         balance_color = "#16a34a"
 
     # 2. HTML Template
+    expense_rows = ""
+    for exp in tour_data.get("expense_details", []):
+        expense_rows += f"""
+        <tr>
+            <td>{exp['date']}</td>
+            <td>{exp['vendor']}</td>
+            <td>{exp['vendor_nit']}</td>
+            <td>{exp['category']}</td>
+            <td style="text-align: right;">${exp['amount']:,.0f}</td>
+        </tr>
+        """
+
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <style>
-            body {{ font-family: 'Helvetica', sans-serif; color: #334155; line-height: 1.6; }}
-            .header {{ text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #0f172a; padding-bottom: 1rem; }}
-            .title {{ font-size: 24px; font-weight: bold; color: #0f172a; }}
-            .subtitle {{ font-size: 14px; color: #64748b; }}
-            .section {{ margin-bottom: 1.5rem; }}
-            .label {{ font-weight: bold; font-size: 12px; color: #64748b; text-transform: uppercase; }}
-            .value {{ font-size: 16px; font-weight: 500; color: #0f172a; }}
-            .table {{ width: 100%; border-collapse: collapse; margin-top: 1rem; }}
-            .table th {{ text-align: left; background: #f1f5f9; padding: 8px; font-size: 12px; text-transform: uppercase; }}
-            .table td {{ padding: 8px; border-bottom: 1px solid #e2e8f0; }}
-            .balance-box {{ 
-                margin-top: 2rem; padding: 1.5rem; border-radius: 8px; text-align: center;
+            @page {{ margin: 1cm; }}
+            body {{ font-family: 'Helvetica', sans-serif; color: #1e293b; line-height: 1.5; font-size: 11px; }}
+            .header {{ text-align: center; margin-bottom: 2rem; border-bottom: 3px solid #0f172a; padding-bottom: 1rem; }}
+            .title {{ font-size: 20px; font-weight: bold; color: #0f172a; letter-spacing: 1px; }}
+            .company-name {{ font-size: 14px; color: #475569; margin-top: 5px; font-weight: bold; }}
+            
+            .flex-container {{ display: flex; justify-content: space-between; margin-bottom: 2rem; }}
+            .info-box {{ width: 45%; }}
+            .label {{ font-weight: bold; font-size: 9px; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }}
+            .value {{ font-size: 12px; font-weight: 600; color: #0f172a; }}
+            
+            .summary-table {{ width: 100%; border-collapse: collapse; margin-bottom: 2rem; border: 1px solid #e2e8f0; }}
+            .summary-table th {{ background: #0f172a; color: white; padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; }}
+            .summary-table td {{ padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }}
+            .highlight-row {{ background: #f8fafc; font-weight: bold; }}
+            
+            .audit-box {{ 
+                margin-top: 1rem; padding: 20px; border-radius: 8px; text-align: center;
                 background: {balance_color}10; border: 2px solid {balance_color}; 
             }}
-            .balance-title {{ color: {balance_color}; font-weight: bold; font-size: 18px; }}
-            .declaration {{ margin-top: 3rem; font-size: 12px; color: #64748b; text-align: justify; }}
-            .signature-section {{ margin-top: 4rem; text-align: center; }}
-            .signature-line {{ border-top: 1px solid #cbd5e1; width: 300px; margin: 0 auto 10px auto; }}
+            .audit-label {{ color: #475569; font-size: 10px; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }}
+            .balance-title {{ color: {balance_color}; font-weight: 800; font-size: 22px; }}
+            
+            .details-section {{ margin-top: 2rem; }}
+            .details-title {{ font-size: 14px; font-weight: bold; color: #0f172a; border-left: 4px solid #0f172a; padding-left: 10px; margin-bottom: 10px; }}
+            .details-table {{ width: 100%; border-collapse: collapse; }}
+            .details-table th {{ text-align: left; background: #f1f5f9; padding: 8px; font-size: 9px; text-transform: uppercase; color: #475569; border-bottom: 2px solid #cbd5e1; }}
+            .details-table td {{ padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; color: #334155; }}
+            
+            .declaration {{ margin-top: 2rem; font-size: 10px; color: #475569; text-align: justify; padding: 15px; background: #fdfdfd; border: 1px dashed #cbd5e1; border-radius: 5px; }}
+            
+            .signature-section {{ margin-top: 3rem; display: flex; flex-direction: column; align-items: center; text-align: center; }}
+            .signature-card {{ width: 300px; padding: 10px; }}
+            .signature-image {{ max-width: 200px; height: auto; margin-bottom: 10px; }}
+            .signature-line {{ border-top: 1px solid #0f172a; width: 100%; margin-bottom: 5px; }}
+            
+            .footer {{ position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 5px; }}
         </style>
     </head>
     <body>
         <div class="header">
-            <div class="title">ACTA DE LIQUIDACIÓN DE TOUR</div>
-            <div class="subtitle">{company_name} | Ref: {tour_id}</div>
+            <div class="title">ACTA DE LIQUIDACIÓN FINAL</div>
+            <div class="company-name">{company_name}</div>
         </div>
 
-        <div class="section">
-            <div class="label">Responsable del Tour</div>
-            <div class="value">{guide_name}</div>
-            <div class="label" style="margin-top: 10px;">Fecha de Cierre</div>
-            <div class="value">{closed_at}</div>
+        <div style="display: table; width: 100%; margin-bottom: 20px;">
+            <div style="display: table-cell; width: 50%;">
+                <div class="label">Responsable / Guía</div>
+                <div class="value">{guide_name}</div>
+            </div>
+            <div style="display: table-cell; width: 50%; text-align: right;">
+                <div class="label">ID de Liquidación / Tour</div>
+                <div class="value">{tour_id}</div>
+                <div class="label" style="margin-top: 5px;">Fecha de Cierre</div>
+                <div class="value">{closed_at}</div>
+            </div>
         </div>
 
-        <div class="section">
-            <div class="label">Resumen Financiero</div>
-            <table class="table">
+        <div class="details-title">RESUMEN DE AUDITORÍA</div>
+        <table class="summary-table">
+            <thead>
                 <tr>
-                    <th>Concepto</th>
-                    <th style="text-align: right;">Monto (COP)</th>
+                    <th>Concepto de Liquidación</th>
+                    <th style="text-align: right;">Monto Unitario</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>(+) Total Anticipos Recibidos (Asignación)</td>
+                    <td style="text-align: right;">${advances:,.0f} COP</td>
                 </tr>
                 <tr>
-                    <td>(+) Anticipos Recibidos</td>
-                    <td style="text-align: right;">${advances:,.0f}</td>
+                    <td>(+) Total Recaudos Clientes (En Ruta)</td>
+                    <td style="text-align: right;">${collections:,.0f} COP</td>
+                </tr>
+                <tr class="highlight-row">
+                    <td>SUBTOTAL RESPONSABILIDAD (Ingresos)</td>
+                    <td style="text-align: right;">${(advances + collections):,.0f} COP</td>
                 </tr>
                 <tr>
-                    <td>(+) Recaudos de Clientes</td>
-                    <td style="text-align: right;">${collections:,.0f}</td>
+                    <td>(-) Total Gastos Legalizados (Efectivo)</td>
+                    <td style="text-align: right;">-${expenses:,.0f} COP</td>
                 </tr>
-                <tr>
-                    <td>(-) Total Gastos Legalizados</td>
-                    <td style="text-align: right;">-${expenses:,.0f}</td>
-                </tr>
-            </table>
-        </div>
+            </tbody>
+        </table>
 
-        <div class="balance-box">
-            <div class="label">Balance Final</div>
+        <div class="audit-box">
+            <div class="audit-label">Balance Final para Tesorería</div>
             <div class="balance-title">{balance_text}</div>
+        </div>
+
+        <div class="details-section">
+            <div class="details-title">DESGLOSE DETALLADO DE GASTOS</div>
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Fecha</th>
+                        <th style="width: 25%;">Comercio / Proveedor</th>
+                        <th style="width: 15%;">NIT / ID</th>
+                        <th style="width: 20%;">Categoría</th>
+                        <th style="width: 25%; text-align: right;">Monto Pagado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {expense_rows}
+                </tbody>
+            </table>
         </div>
         
         <div class="declaration">
-            DECLARACIÓN DE PAZ Y SALVO:
-            <br><br>
-            Yo, <b>{guide_name}</b>, declaro que los valores aquí reportados son verídicos y que he legalizado la totalidad del efectivo a mi cargo.
-            <br>
-            Al firmar este documento, acepto el balance final resultante y libero a {company_name} de cualquier reclamación futura relacionada con estos gastos, así como la empresa me extiende el correspondiente paz y salvo una vez liquidado el saldo pendiente.
+            <b>DECLARACIÓN DE FE:</b> Yo, <b>{guide_name}</b>, identificado como el responsable del tour <b>{tour_id}</b>, declaro bajo juramento que la información y los soportes presentados en esta liquidación son auténticos y corresponden a gastos ejecutados exclusivamente para el cumplimiento del servicio. Al firmar este documento electrónico, acepto el balance final de auditoría y me comprometo a formalizar cualquier reintegro pendiente en las próximas 24 horas.
         </div>
 
         <div class="signature-section">
-            <img src="{signature_path}" width="200" style="margin-bottom: 2rem;" />
-            <div class="signature-line"></div>
-            <div class="value">{guide_name}</div>
-            <div class="label">Firma del Guía / Responsable</div>
+            <div class="signature-card">
+                <img src="{signature_path}" class="signature-image" />
+                <div class="signature-line"></div>
+                <div class="value">{guide_name}</div>
+                <div class="label">Huella / Firma Digital del Responsable</div>
+            </div>
         </div>
 
-        <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 10px; color: #94a3b8;">
-            Generado por ReportPilot AI el {datetime.now().strftime("%d/%m/%Y %H:%M")}
+        <div class="footer">
+            Documento de auditoría generado automáticamente por <b>ReportPilot AI</b> v2.0 • {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
         </div>
     </body>
     </html>

@@ -65,6 +65,7 @@ async def close_tour(
     total_advances = 0
     total_collections = 0
     total_expenses = 0
+    expense_details = []
     
     for r in reports:
         amount = r.amount or 0
@@ -74,6 +75,13 @@ async def close_tour(
             total_collections += amount
         else:
             total_expenses += amount
+            expense_details.append({
+                "date": r.created_at.strftime("%d/%m/%Y") if r.created_at else "N/A",
+                "vendor": r.vendor or "N/A",
+                "vendor_nit": r.vendor_nit or "N/A",
+                "category": r.category or "📦 Otros",
+                "amount": amount
+            })
             
     final_balance = (total_advances + total_collections) - total_expenses
     
@@ -89,6 +97,7 @@ async def close_tour(
         "total_advances": total_advances,
         "total_collections": total_collections,
         "total_expenses": total_expenses,
+        "expense_details": expense_details, # New detailed list
         "closed_at": datetime.now()
     }
 
