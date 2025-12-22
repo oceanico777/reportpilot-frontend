@@ -201,59 +201,156 @@ def export_tour_xlsx(
     db: Session = Depends(get_db),
     company_id: str = Depends(get_user_company)
 ):
-    # 1. Query Data Scoped to Company and Tour
-    # We exclude internal categories like advances and collections for the expense sheet
+    # 1. Query Data
     reports = db.query(models.Report).filter(
         models.Report.company_id == company_id,
         models.Report.tour_id == tour_id
     ).filter(
         ~models.Report.category.in_(["ANTICIPO_RECIBIDO", "RECAUDO_CLIENTE"])
-    ).order_by(models.Report.created_at.asc()).all()
+    ).all()
     
-    # 2. Prepare XLSX
+    # 2. Setup Workbook
     wb = Workbook()
     ws = wb.active
-    ws.title = f"Gastos Tour {tour_id}"
+    ws.title = f"Legalización {tour_id}"
     
-    # Headers
-    headers = ["Fecha", "Comercio / Proveedor", "NIT / ID", "Categoría", "Monto (COP)", "Comentarios"]
-    ws.append(headers)
+    # --- STYLES ---
+    gold_fill = PatternFill(start_color="C5A658", end_color="C5A658", fill_type="solid") # Gold color from image
+    white_font = Font(bold=True, color="FFFFFF")
+    black_font_bold = Font(bold=True, color="000000")
+    border_thin = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    border_thick_bottom = Border(bottom=Side(style='thick'))
     
-    # Style Headers
-    header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="4F46E5", end_color="4F46E5", fill_type="solid")
+    # --- HEADER SECTION ---
+    # Row 2: Title
+    ws.merge_cells('B2:F2')
+    cell = ws['B2']
+    cell.value = "LEGALIZACIÓN HANSA TOURS"
+    cell.font = Font(bold=True, size=14, color="C5A658")
+    cell.alignment = Alignment(horizontal="center")
     
-    for cell in ws[1]:
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal="center")
-
-    # Rows
-    for r in reports:
-        ws.append([
-            r.created_at.strftime("%Y-%m-%d") if r.created_at else "N/A",
-            r.vendor or "N/A",
-            r.vendor_nit or "N/A",
-            r.category or "📦 Otros",
-            r.amount or 0,
-            r.summary_text or ""
-        ])
+    # Row 4-8: Metadata Left
+    metadata_labels = [
+        ("FECHA", date.today().strftime("%Y-%m-%d")),
+        ("NOMBRE DEL CLIENTE Y HOTEL", "Varios / Tour"),
+        ("TIPO DE TOUR", tour_id),
+        ("SOLICITADO POR", "Operaciones"),
+        ("TARIFA DE GUIA", "")
+    ]
+    
+    start_row = 4
+    for i, (label, val) in enumerate(metadata_labels):
+        row = start_row + i
+        # Label
+        ws[f'B{row}'] = label
+        ws[f'B{row}'].fill = gold_fill
+        ws[f'B{row}'].font = black_font_bold
+        ws[f'B{row}'].border = border_thin
+        # Value
+        ws.merge_cells(f'C{row}:D{row}')
+        ws[f'C{row}'] = val
+        ws[f'C{row}'].border = border_thin
         
-    # Column Widths
-    ws.column_dimensions['A'].width = 15
-    ws.column_dimensions['B'].width = 30
-    ws.column_dimensions['C'].width = 20
-    ws.column_dimensions['D'].width = 20
-    ws.column_dimensions['E'].width = 15
-    ws.column_dimensions['F'].width = 40
+    # Row 4-6: Metadata Right (Summary)
+    right_labels = ["CANT. HORAS", "CANT. PAX", "ANTICIPO (BASE)", "SALDO DE ANTICIPO"]
+    ws[f'E4'] = "CANT. HORAS"
+    ws[f'E5'] = "CANT. PAX"
+    ws[f'E6'] = "ANTICIPO (BASE)"
+    ws[f'E7'] = "SALDO DE ANTICIPO"
+    
+    for r in range(4, 8):
+        ws[f'E{r}'].fill = gold_fill
+        ws[f'E{r}'].font = black_font_bold
+        ws[f'E{r}'].border = border_thin
+        ws[f'F{r}'].border = border_thin
+        
+    # --- EXPENSES SECTION ---
+    # Map categories to hardcoded rows
+    # Structure: (Row Label, DB Category Identifier)
+    expense_rows_map = [
+        ("ENTRADAS", "ENTRADAS"),
+        ("PARQUEADERO (bike tours)", "PARQUEADERO"),
+        ("REFRIGERIO", "REFRIGERIO"),
+        ("ALMUERZO CLIENTES", "ALIMENTACION"),
+        ("AUX. ALMUERZO GUÍA", "ALMUERZO_GUIA"),
+        ("TAXIS AUTORIZADOS", "TRANSPORTE"),
+        ("PROPINAS", "PROPINAS"),
+        ("COMEN. TRIPADVISOR (40.000)", "COMISION"),
+        ("COMISIÓN VENTA TOURS (5%)", "COMISION_VENTA"),
+        ("TOTAL GASTO", "TOTAL")
+    ]
+    
+    # Calculate Totals per Category
+    category_totals = {}
+    total_general = 0
+    
+    for r in reports:
+        cat = r.category or "OTROS"
+        # Normalize simple mapping
+        if "ALIMENTACION" in cat: cat_key = "ALIMENTACION"
+        elif "TRANSPORTE" in cat: cat_key = "TRANSPORTE"
+        else: cat_key = cat
+        
+        category_totals[cat_key] = category_totals.get(cat_key, 0) + (r.amount or 0)
+        total_general += (r.amount or 0)
 
+    # Render Rows
+    start_row_expenses = 10
+    
+    # Header for Expenses
+    ws[f'B{start_row_expenses}'] = "CONCEPTO"
+    ws[f'C{start_row_expenses}'] = "VALOR"
+    ws[f'D{start_row_expenses}'] = "DETALLE / OBSERVACIONES"
+    for col in ['B', 'C', 'D']:
+        ws[f'{col}{start_row_expenses}'].fill = gold_fill
+        ws[f'{col}{start_row_expenses}'].font = black_font_bold
+        ws[f'{col}{start_row_expenses}'].alignment = Alignment(horizontal="center")
+        
+    current_row = start_row_expenses + 1
+    
+    for label, db_key in expense_rows_map:
+        if label == "TOTAL GASTO": continue # Skip, we add at end
+        
+        # Determine value (simple fuzzy match)
+        val = 0
+        if db_key == "ALIMENTACION": val = category_totals.get("ALIMENTACION", 0) + category_totals.get("RESTAURANTE", 0)
+        elif db_key == "TRANSPORTE": val = category_totals.get("TRANSPORTE", 0) + category_totals.get("TAXI", 0)
+        elif db_key == "ENTRADAS": val = category_totals.get("ENTRADAS", 0)
+        else: val = category_totals.get(db_key, 0)
+        
+        ws[f'B{current_row}'] = label
+        ws[f'B{current_row}'].fill = gold_fill
+        ws[f'B{current_row}'].font = black_font_bold
+        ws[f'B{current_row}'].border = border_thin
+        
+        ws[f'C{current_row}'] = val
+        ws[f'C{current_row}'].number_format = '"$"#,##0'
+        ws[f'C{current_row}'].border = border_thin
+        
+        ws[f'D{current_row}'] = "" # Space for notes
+        ws[f'D{current_row}'].border = border_thin
+        
+        current_row += 1
+        
+    # TOTAL ROW
+    ws[f'B{current_row}'] = "TOTAL GASTO"
+    ws[f'C{current_row}'] = total_general
+    ws[f'C{current_row}'].number_format = '"$"#,##0'
+    ws[f'C{current_row}'].font = Font(bold=True)
+    
+    # --- COLUMNS ---
+    ws.column_dimensions['B'].width = 35
+    ws.column_dimensions['C'].width = 20
+    ws.column_dimensions['D'].width = 30
+    ws.column_dimensions['E'].width = 25
+    ws.column_dimensions['F'].width = 20
+    
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
     
-    filename = f"Gastos_{tour_id}.xlsx"
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename=Legalizacion_{tour_id}.xlsx"}
     )
