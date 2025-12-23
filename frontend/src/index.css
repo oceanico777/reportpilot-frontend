@@ -66,8 +66,8 @@ h4 {
 
 /* Sidebar Styles */
 .sidebar {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: var(--backdrop);
+  background: #0f172a;
+  /* Solid background */
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -93,7 +93,6 @@ h4 {
 /* Glassmorphism Card */
 .glass-card {
   background: var(--gradient-card);
-  backdrop-filter: var(--backdrop);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);

@@ -30,7 +30,7 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
     const ThemeIcon = currentTheme === 'dark-mode' ? Sun : Moon;
 
     return (
-        <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+        <aside className={`sidebar ${isOpen ? 'open' : ''} mobile-sidebar`}>
             <div className="sidebar-header">
                 <div className="logo-container" style={{ paddingBottom: '1rem', display: 'flex', justifyContent: 'flex-start', paddingLeft: '1rem' }}>
                     <img src="/logo.png" alt="ReportPilot" style={{ height: '40px', objectFit: 'contain' }} />
@@ -69,7 +69,9 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                     <button onClick={handleLogout} className="sidebar-item" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <LogOut size={20} />
                         <span>Logout</span>
-                    </button>
+                </div>
+                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#334155', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    ReportPilot Mobile v1.1
                 </div>
             </nav>
         </aside>
