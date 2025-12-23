@@ -130,7 +130,7 @@ const Planning = () => {
                 <div className="card" style={{ gridColumn: 'span 1' }}>
                     <h3 style={{ marginBottom: '1.5rem' }}>Desglose por Categoría</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {chartData.sort((a, b) => b.value - a.value).map((item, index) => (
+                        {[...chartData].sort((a, b) => b.value - a.value).map((item, index) => (
                             <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-border)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: COLORS[index % COLORS.length] }}></div>

@@ -202,7 +202,7 @@ const Dashboard = () => {
             <header className="page-header" style={{ marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', letterSpacing: '-0.03em' }}>
-                        Dashboard v1.1.7
+                        Dashboard v1.1.8
                     </h1>
                     <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem', fontSize: '1.1rem' }}>Visión en tiempo real de tus finanzas</p>
                 </div>
@@ -331,7 +331,7 @@ const Dashboard = () => {
                         <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Mayor Categoría</span>
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: '700', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-heading)' }}>
-                        {stats.category_stats.length > 0 ? [...stats.category_stats].sort((a, b) => b.value - a.value)[0].name : '-'}
+                        {stats.category_stats.length > 0 ? stats.category_stats.reduce((max, current) => (current.value > max.value ? current : max), stats.category_stats[0]).name : '-'}
                     </div>
                     <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
                         Tendencia principal
