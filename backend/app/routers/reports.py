@@ -67,84 +67,92 @@ def generate_report(
     report: schemas.ReportCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    company_id: str = Depends(get_user_company)
 ):
-    user_id = current_user["id"]
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not db_user or not db_user.company_id:
-        raise HTTPException(status_code=403, detail="User not linked to a company. Please join an organization.")
-    
-    company_id = db_user.company_id
-    
-    summary = "Reporte pendiente de procesamiento"
-    vendor = None
-    amount = None
-    currency = None
-    category = report.category # Default to manual selection if present
-    existing_duplicate = None
-    
-    # [Start] Read-Only Check for Closed Tours
-    if report.tour_id:
-        closed_tour = db.query(models.TourClosure).filter(
-            models.TourClosure.tour_id == report.tour_id,
-            models.TourClosure.company_id == company_id
-        ).first()
-        if closed_tour:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"El Tour {report.tour_id} está CERRADO y no admite nuevos reportes."
-            )
-    # [End] Read-Only Check
-
-    if report.extracted_data:
-        data = report.extracted_data
-        vendor = data.get('vendor')
-        amount = data.get('amount')
-        currency = data.get('currency')
-        # If no manual category, use AI suggested one
-        if not category:
-            category = data.get('category')
-            
-        summary = (
-            f"Factura de {vendor} del {data.get('date', 'N/A')}. "
-            f"Total: {currency} {amount}. "
-            f"Categoría: {category}"
-        )
+    try:
+        user_id = current_user["id"]
+        # db_user check removed as get_user_company ensures valid company linkage
         
-        # Check for duplicates
-        existing_duplicate = db.query(models.Report).filter(
-            models.Report.company_id == company_id,
-            models.Report.vendor == vendor,
-            models.Report.amount == amount
-        ).first()
-
-    db_report = models.Report(
-        company_id=company_id,
-        user_id=user_id,
-        month=report.month,
-        year=report.year,
-        tour_id=report.tour_id,
-        client_name=report.client_name,
-        vendor=vendor,
-        amount=amount,
-        currency=currency,
-        category=category,
-        source_file_path=report.source_file_path,
-        status=models.ReportStatus.PROCESSING.value,
-        summary_text=summary,
-        is_duplicate=True if existing_duplicate else False,
-        potential_duplicate_of=existing_duplicate.id if existing_duplicate else None
-    )
-
-    db.add(db_report)
-    db.commit()
-    db.refresh(db_report)
+        summary = "Reporte pendiente de procesamiento"
+        vendor = None
+        amount = None
+        currency = None
+        category = report.category # Default to manual selection if present
+        existing_duplicate = None
+        
+        # [Start] Read-Only Check for Closed Tours
+        if report.tour_id:
+            closed_tour = db.query(models.TourClosure).filter(
+                models.TourClosure.tour_id == report.tour_id,
+                models.TourClosure.company_id == company_id
+            ).first()
+            if closed_tour:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"El Tour {report.tour_id} está CERRADO y no admite nuevos reportes."
+                )
+        # [End] Read-Only Check
     
-    # Always trigger report generation background task
-    # We use create_report but we will modify it to use the robust Gemini logic
-    background_tasks.add_task(report_generator.create_report, db_report.id)
+        if report.extracted_data:
+            data = report.extracted_data
+            vendor = data.get('vendor')
+            amount = data.get('amount')
+            currency = data.get('currency')
+            # If no manual category, use AI suggested one
+            if not category:
+                category = data.get('category')
+                
+            summary = (
+                f"Factura de {vendor} del {data.get('date', 'N/A')}. "
+                f"Total: {currency} {amount}. "
+                f"Categoría: {category}"
+            )
+            
+            # Check for duplicates
+            existing_duplicate = db.query(models.Report).filter(
+                models.Report.company_id == company_id,
+                models.Report.vendor == vendor,
+                models.Report.amount == amount
+            ).first()
     
-    return db_report
+        db_report = models.Report(
+            company_id=company_id,
+            user_id=user_id,
+            month=report.month,
+            year=report.year,
+            tour_id=report.tour_id,
+            client_name=report.client_name,
+            vendor=vendor,
+            amount=amount,
+            currency=currency,
+            category=category,
+            source_file_path=report.source_file_path,
+            status=models.ReportStatus.PROCESSING.value,
+            summary_text=summary,
+            is_duplicate=True if existing_duplicate else False,
+            potential_duplicate_of=existing_duplicate.id if existing_duplicate else None
+        )
+    
+        db.add(db_report)
+        db.commit()
+        db.refresh(db_report)
+        
+        # Always trigger report generation background task
+        # We use create_report but we will modify it to use the robust Gemini logic
+        background_tasks.add_task(report_generator.create_report, db_report.id)
+        
+        return db_report
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        try:
+            with open("error_trace.log", "w") as f:
+                f.write(error_msg)
+        except:
+             pass
+        print(error_msg) # Keep print just in case
+        raise e
 
 @router.get("/", response_model=List[schemas.Report])
 def list_reports(

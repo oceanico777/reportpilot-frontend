@@ -207,7 +207,7 @@ const Dashboard = () => {
                     <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem', fontSize: '1.1rem' }}>Visión en tiempo real de tus finanzas</p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     {/* Sync Button */}
                     {pendingCount > 0 && (
                         <button
@@ -231,25 +231,41 @@ const Dashboard = () => {
                     )}
 
                     {/* Date Filters */}
-                    <div style={{ display: 'flex', background: 'rgba(30, 41, 59, 0.5)', padding: '4px', borderRadius: '12px', border: '1px solid var(--color-border)', backdropFilter: 'blur(4px)' }}>
+                    <div style={{
+                        display: 'flex',
+                        background: 'rgba(30, 41, 59, 0.5)',
+                        padding: '4px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--color-border)',
+                        backdropFilter: 'blur(4px)',
+                        overflowX: 'auto',
+                        maxWidth: '100%',
+                        WebkitOverflowScrolling: 'touch', // Smooth scroll on iOS
+                        scrollbarWidth: 'none', // Hide scrollbar Firefox
+                        msOverflowStyle: 'none' // Hide scrollbar IE
+                    }}>
+                        {/* Hide scrollbar Chrome/Safari */}
+                        <style>{`
+                            div::-webkit-scrollbar { display: none; }
+                        `}</style>
                         <button
                             onClick={() => handleDateFilter('all')}
-                            style={getButtonStyle(dateRange.label === 'all')}>
+                            style={{ ...getButtonStyle(dateRange.label === 'all'), whiteSpace: 'nowrap' }}>
                             Todo
                         </button>
                         <button
                             onClick={() => handleDateFilter('year')}
-                            style={getButtonStyle(dateRange.label === 'year')}>
+                            style={{ ...getButtonStyle(dateRange.label === 'year'), whiteSpace: 'nowrap' }}>
                             Este Año
                         </button>
                         <button
                             onClick={() => handleDateFilter('quarter')}
-                            style={getButtonStyle(dateRange.label === 'quarter')}>
+                            style={{ ...getButtonStyle(dateRange.label === 'quarter'), whiteSpace: 'nowrap' }}>
                             Últ. 3 Meses
                         </button>
                         <button
                             onClick={() => handleDateFilter('month')}
-                            style={getButtonStyle(dateRange.label === 'month')}>
+                            style={{ ...getButtonStyle(dateRange.label === 'month'), whiteSpace: 'nowrap' }}>
                             Este Mes
                         </button>
                     </div>
@@ -359,17 +375,17 @@ const Dashboard = () => {
                 </div>
             )}
 
-            {/* CHARTS GRID */}
+            {/* CHARTS GRID - Responsive Columns */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
 
                 {/* Main Bar Chart - Monthly */}
-                <div style={{ gridColumn: 'span 8' }} className="responsive-col-12">
-                    <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '400px' }}>
+                <div style={{ gridColumn: 'span 12' }} className="lg:col-span-8">
+                    <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '350px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)' }}>Evolución de Gastos</h3>
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={stats.monthly_stats} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                            <BarChart data={stats.monthly_stats} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                                 <defs>
                                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
@@ -387,8 +403,8 @@ const Dashboard = () => {
                 </div>
 
                 {/* Donut Chart - Categories */}
-                <div style={{ gridColumn: 'span 4' }} className="responsive-col-12">
-                    <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '400px' }}>
+                <div style={{ gridColumn: 'span 12' }} className="lg:col-span-4">
+                    <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '350px' }}>
                         <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', marginBottom: '1rem' }}>Por Categoría</h3>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
@@ -406,14 +422,19 @@ const Dashboard = () => {
                                     ))}
                                 </Pie>
                                 <Tooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                <Legend
+                                    verticalAlign="bottom"
+                                    height={36}
+                                    iconType="circle"
+                                    wrapperStyle={{ fontSize: '12px' }}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Horizontal Bar Chart - Top Clients */}
-                <div style={{ gridColumn: 'span 6' }} className="responsive-col-12">
+                <div style={{ gridColumn: 'span 12' }} className="lg:col-span-6">
                     <div className="glass-card" style={{ padding: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem' }}>
                             <Briefcase size={20} color="var(--color-primary)" />
@@ -445,7 +466,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Recent Activity Table */}
-                <div style={{ gridColumn: 'span 6' }} className="responsive-col-12">
+                <div style={{ gridColumn: 'span 12' }} className="lg:col-span-6">
                     <div className="glass-card" style={{ padding: '1.5rem', height: '100%' }}>
                         <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', marginBottom: '1rem' }}>Actividad Reciente</h3>
                         <div className="table-container" style={{ marginTop: '0.5rem' }}>

@@ -285,11 +285,17 @@ def export_tour_xlsx(
     total_general = 0
     
     for r in reports:
-        cat = r.category or "OTROS"
+        raw_cat = r.category or "OTROS"
+        cat = raw_cat.upper().replace("Ó", "O").replace("Á", "A").replace("É", "E").replace("Í", "I").replace("Ú", "U")
+        
         # Normalize simple mapping
-        if "ALIMENTACION" in cat: cat_key = "ALIMENTACION"
-        elif "TRANSPORTE" in cat: cat_key = "TRANSPORTE"
-        else: cat_key = cat
+        cat_key = cat # Default
+        if "ALIMENTACION" in cat or "RESTAURANTE" in cat or "ALMUERZO" in cat: cat_key = "ALIMENTACION"
+        elif "TRANSPORTE" in cat or "TAXI" in cat or "UBER" in cat: cat_key = "TRANSPORTE"
+        elif "ENTRADA" in cat: cat_key = "ENTRADAS"
+        elif "PARQUEADERO" in cat: cat_key = "PARQUEADERO"
+        elif "REFRIGERIO" in cat: cat_key = "REFRIGERIO"
+        elif "PROPINA" in cat: cat_key = "PROPINAS"
         
         category_totals[cat_key] = category_totals.get(cat_key, 0) + (r.amount or 0)
         total_general += (r.amount or 0)

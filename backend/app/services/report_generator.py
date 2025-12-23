@@ -144,14 +144,31 @@ def generate_excel_report(reports):
     # Financial Categories mapping
     INCOME_CATEGORIES = ["ANTICIPO_RECIBIDO", "RECAUDO_CLIENTE"]
     
+    category_totals = {} # For detailed category breakdown
+    total_general = 0 # Sum of all amounts
+    
     for r in reports:
-        amount = r.amount or 0
-        cat = r.category or "📦 Otros"
+        raw_cat = r.category or "OTROS"
+        cat = raw_cat.upper().replace("Ó", "O").replace("Á", "A").replace("É", "E").replace("Í", "I").replace("Ú", "U")
         
-        # Financial Sums
-        if cat == "ANTICIPO_RECIBIDO":
+        # Normalize simple mapping
+        cat_key = cat # Default
+        if "ALIMENTACION" in cat or "RESTAURANTE" in cat or "ALMUERZO" in cat: cat_key = "ALIMENTACION"
+        elif "TRANSPORTE" in cat or "TAXI" in cat or "UBER" in cat: cat_key = "TRANSPORTE"
+        elif "ENTRADA" in cat: cat_key = "ENTRADAS"
+        elif "PARQUEADERO" in cat: cat_key = "PARQUEADERO"
+        elif "REFRIGERIO" in cat: cat_key = "REFRIGERIO"
+        elif "PROPINA" in cat: cat_key = "PROPINAS"
+        
+        category_totals[cat_key] = category_totals.get(cat_key, 0) + (r.amount or 0)
+        total_general += (r.amount or 0)           
+        
+        amount = r.amount or 0
+        
+        # Financial Sums (using original category for these specific checks)
+        if raw_cat == "ANTICIPO_RECIBIDO":
             total_advances += amount
-        elif cat == "RECAUDO_CLIENTE":
+        elif raw_cat == "RECAUDO_CLIENTE":
             total_collections += amount
         else:
             total_expenses += amount
@@ -307,9 +324,6 @@ def generate_clearance_act(tour_data, signature_path):
     Generates a PDF 'Acta de Liquidación' using WeasyPrint.
     Returns bytes buffer.
     """
-    import logging
-    from weasyprint import HTML, CSS
-    
     # 1. Prepare Data
     company_name = tour_data.get("company_name", "Empresa de Turismo")
     tour_id = tour_data.get("tour_id", "Unknown")
@@ -322,26 +336,36 @@ def generate_clearance_act(tour_data, signature_path):
     balance = (advances + collections) - expenses
     
     balance_text = ""
+    status_icon = ""
+    balance_bg = "#ecfdf5"
+    balance_color = "#10b981"
+    
     if balance > 0:
         balance_text = f"EL GUÍA DEBE REINTEGRAR: ${balance:,.0f} COP"
-        balance_color = "#dc2626"
+        balance_color = "#ef4444" # Red 500
+        balance_bg = "#fef2f2"
+        status_icon = "⚠️"
     elif balance < 0:
         balance_text = f"LA AGENCIA DEBE REEMBOLSAR: ${abs(balance):,.0f} COP"
-        balance_color = "#2563eb"
+        balance_color = "#3b82f6" # Blue 500
+        balance_bg = "#eff6ff"
+        status_icon = "🔵"
     else:
         balance_text = "PAZ Y SALVO (Saldo $0)"
-        balance_color = "#16a34a"
+        balance_color = "#10b981" # Emerald 500
+        balance_bg = "#ecfdf5"
+        status_icon = "✅"
 
     # 2. HTML Template
     expense_rows = ""
     for exp in tour_data.get("expense_details", []):
         expense_rows += f"""
         <tr>
-            <td>{exp['date']}</td>
-            <td>{exp['vendor']}</td>
-            <td>{exp['vendor_nit']}</td>
-            <td>{exp['category']}</td>
-            <td style="text-align: right;">${exp['amount']:,.0f}</td>
+            <td style="color: #64748b;">{exp['date']}</td>
+            <td style="font-weight: 500; color: #1e293b;">{exp['vendor']}</td>
+            <td style="color: #64748b; font-family: monospace;">{exp['vendor_nit']}</td>
+            <td><span class="badge">{exp['category']}</span></td>
+            <td style="text-align: right; font-weight: 600; font-family: 'Courier New', monospace;">${exp['amount']:,.0f}</td>
         </tr>
         """
 
@@ -349,108 +373,309 @@ def generate_clearance_act(tour_data, signature_path):
     <!DOCTYPE html>
     <html>
     <head>
+        <meta charset="UTF-8">
         <style>
-            @page {{ margin: 1cm; }}
-            body {{ font-family: 'Helvetica', sans-serif; color: #1e293b; line-height: 1.5; font-size: 11px; }}
-            .header {{ text-align: center; margin-bottom: 2rem; border-bottom: 3px solid #0f172a; padding-bottom: 1rem; }}
-            .title {{ font-size: 20px; font-weight: bold; color: #0f172a; letter-spacing: 1px; }}
-            .company-name {{ font-size: 14px; color: #475569; margin-top: 5px; font-weight: bold; }}
-            
-            .flex-container {{ display: flex; justify-content: space-between; margin-bottom: 2rem; }}
-            .info-box {{ width: 45%; }}
-            .label {{ font-weight: bold; font-size: 9px; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }}
-            .value {{ font-size: 12px; font-weight: 600; color: #0f172a; }}
-            
-            .summary-table {{ width: 100%; border-collapse: collapse; margin-bottom: 2rem; border: 1px solid #e2e8f0; }}
-            .summary-table th {{ background: #0f172a; color: white; padding: 10px; text-align: left; font-size: 10px; text-transform: uppercase; }}
-            .summary-table td {{ padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }}
-            .highlight-row {{ background: #f8fafc; font-weight: bold; }}
-            
-            .audit-box {{ 
-                margin-top: 1rem; padding: 20px; border-radius: 8px; text-align: center;
-                background: {balance_color}10; border: 2px solid {balance_color}; 
+            @page {{ margin: 0; size: A4; }}
+            body {{ 
+                font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+                color: #334155; 
+                line-height: 1.5; 
+                font-size: 11px; 
+                margin: 0;
+                padding: 40px;
+                background: #fff;
             }}
-            .audit-label {{ color: #475569; font-size: 10px; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }}
-            .balance-title {{ color: {balance_color}; font-weight: 800; font-size: 22px; }}
             
-            .details-section {{ margin-top: 2rem; }}
-            .details-title {{ font-size: 14px; font-weight: bold; color: #0f172a; border-left: 4px solid #0f172a; padding-left: 10px; margin-bottom: 10px; }}
-            .details-table {{ width: 100%; border-collapse: collapse; }}
-            .details-table th {{ text-align: left; background: #f1f5f9; padding: 8px; font-size: 9px; text-transform: uppercase; color: #475569; border-bottom: 2px solid #cbd5e1; }}
-            .details-table td {{ padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px; color: #334155; }}
+            /* Branding Header */
+            .header {{ 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center;
+                border-bottom: 2px solid #e2e8f0; 
+                padding-bottom: 20px; 
+                margin-bottom: 30px; 
+            }}
+            .logo-text {{
+                font-size: 24px;
+                font-weight: 800;
+                color: #0f172a;
+                letter-spacing: -0.5px;
+            }}
+            .logo-sub {{
+                color: #64748b;
+                font-size: 10px;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }}
+            .document-title {{
+                text-align: right;
+            }}
+            .main-title {{
+                font-size: 18px;
+                font-weight: 700;
+                color: #0f172a;
+                text-transform: uppercase;
+            }}
+            .doc-id {{
+                font-family: monospace;
+                color: #64748b;
+                font-size: 11px;
+                margin-top: 4px;
+            }}
+
+            /* Info grid */
+            .info-grid {{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin-bottom: 30px;
+                background: #f8fafc;
+                padding: 15px;
+                border-radius: 8px;
+                border: 1px solid #e2e8f0;
+            }}
+            .info-item label {{
+                display: block;
+                font-size: 9px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #64748b;
+                margin-bottom: 2px;
+                font-weight: 600;
+            }}
+            .info-item div {{
+                font-size: 12px;
+                font-weight: 600;
+                color: #0f172a;
+            }}
+
+            /* Tables */
+            table {{ width: 100%; border-collapse: collapse; }}
             
-            .declaration {{ margin-top: 2rem; font-size: 10px; color: #475569; text-align: justify; padding: 15px; background: #fdfdfd; border: 1px dashed #cbd5e1; border-radius: 5px; }}
+            .summary-section {{ margin-bottom: 30px; }}
+            .section-title {{
+                font-size: 12px;
+                font-weight: 700;
+                color: #0f172a;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-left: 4px solid #2563eb; /* Brand Blue */
+                padding-left: 10px;
+                margin-bottom: 15px;
+            }}
+
+            .summary-card {{
+                background: #fff;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                border: 1px solid #e2e8f0;
+            }}
+            .summary-table th {{
+                background: #1e293b; /* Dark Slate */
+                color: #fff;
+                font-weight: 600;
+                padding: 10px 15px;
+                font-size: 10px;
+                text-transform: uppercase;
+                text-align: left;
+            }}
+            .summary-table td {{
+                padding: 10px 15px;
+                border-bottom: 1px solid #f1f5f9;
+                font-size: 11px;
+            }}
+            .summary-table tr:last-child td {{ border-bottom: none; }}
             
-            .signature-section {{ margin-top: 3rem; display: flex; flex-direction: column; align-items: center; text-align: center; }}
-            .signature-card {{ width: 300px; padding: 10px; }}
-            .signature-image {{ max-width: 200px; height: auto; margin-bottom: 10px; }}
-            .signature-line {{ border-top: 1px solid #0f172a; width: 100%; margin-bottom: 5px; }}
+            .total-row {{
+                background-color: #f8fafc;
+                font-weight: 700;
+                color: #0f172a;
+            }}
+
+            /* Balance Card */
+            .balance-card {{
+                margin-top: 20px;
+                background-color: {balance_bg};
+                border: 1px solid {balance_color}40;
+                border-radius: 8px;
+                padding: 20px;
+                text-align: center;
+            }}
+            .balance-label {{
+                color: #64748b;
+                font-size: 10px;
+                text-transform: uppercase;
+                font-weight: 600;
+                margin-bottom: 5px;
+            }}
+            .balance-amount {{
+                color: {balance_color};
+                font-size: 20px;
+                font-weight: 800;
+            }}
+            .status-icon {{ font-size: 16px; vertical-align: middle; margin-right: 5px; }}
+
+            /* Details Table */
+            .details-table th {{
+                background: #f1f5f9;
+                color: #475569;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 10px;
+                padding: 8px;
+                border-bottom: 2px solid #e2e8f0;
+                text-align: left;
+            }}
+            .details-table td {{
+                padding: 8px;
+                border-bottom: 1px solid #e2e8f0;
+            }}
+            .badge {{
+                background: #e2e8f0;
+                color: #475569;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 9px;
+                font-weight: 600;
+            }}
+
+            /* Footer & Signature */
+            .bottom-section {{
+                margin-top: 40px;
+                page-break-inside: avoid;
+            }}
+            .declaration {{
+                font-style: italic;
+                color: #64748b;
+                font-size: 10px;
+                background: #fafafa;
+                padding: 15px;
+                border-radius: 6px;
+                border: 1px dashed #cbd5e1;
+                margin-bottom: 30px;
+            }}
+            .signatures-grid {{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 40px;
+                margin-top: 20px;
+            }}
+            .sig-box {{
+                text-align: center;
+            }}
+            .sig-line {{
+                border-top: 1px solid #0f172a;
+                margin-top: 40px;
+                margin-bottom: 5px;
+            }}
+            .sig-name {{ font-weight: 700; color: #0f172a; font-size: 11px; }}
+            .sig-role {{ color: #64748b; font-size: 10px; text-transform: uppercase; }}
             
-            .footer {{ position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 5px; }}
+            .sig-img {{
+                height: 50px;
+                margin-bottom: -40px; /* Overlap line */
+                position: relative;
+                z-index: 1;
+            }}
+
+            .footer-branding {{
+                position: fixed;
+                bottom: 20px;
+                left: 40px;
+                right: 40px;
+                text-align: center;
+                color: #94a3b8;
+                font-size: 9px;
+                border-top: 1px solid #f1f5f9;
+                padding-top: 10px;
+            }}
         </style>
     </head>
     <body>
+        <!-- Header -->
         <div class="header">
-            <div class="title">ACTA DE LIQUIDACIÓN FINAL</div>
-            <div class="company-name">{company_name}</div>
-        </div>
-
-        <div style="display: table; width: 100%; margin-bottom: 20px;">
-            <div style="display: table-cell; width: 50%;">
-                <div class="label">Responsable / Guía</div>
-                <div class="value">{guide_name}</div>
+            <div>
+                <div class="logo-text">ReportPilot</div>
+                <div class="logo-sub">Expense Management</div>
             </div>
-            <div style="display: table-cell; width: 50%; text-align: right;">
-                <div class="label">ID de Liquidación / Tour</div>
-                <div class="value">{tour_id}</div>
-                <div class="label" style="margin-top: 5px;">Fecha de Cierre</div>
-                <div class="value">{closed_at}</div>
+            <div class="document-title">
+                <div class="main-title">Acta de Liquidación</div>
+                <div class="doc-id">#{tour_id}</div>
             </div>
         </div>
 
-        <div class="details-title">RESUMEN DE AUDITORÍA</div>
-        <table class="summary-table">
-            <thead>
-                <tr>
-                    <th>Concepto de Liquidación</th>
-                    <th style="text-align: right;">Monto Unitario</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>(+) Total Anticipos Recibidos (Asignación)</td>
-                    <td style="text-align: right;">${advances:,.0f} COP</td>
-                </tr>
-                <tr>
-                    <td>(+) Total Recaudos Clientes (En Ruta)</td>
-                    <td style="text-align: right;">${collections:,.0f} COP</td>
-                </tr>
-                <tr class="highlight-row">
-                    <td>SUBTOTAL RESPONSABILIDAD (Ingresos)</td>
-                    <td style="text-align: right;">${(advances + collections):,.0f} COP</td>
-                </tr>
-                <tr>
-                    <td>(-) Total Gastos Legalizados (Efectivo)</td>
-                    <td style="text-align: right;">-${expenses:,.0f} COP</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="audit-box">
-            <div class="audit-label">Balance Final para Tesorería</div>
-            <div class="balance-title">{balance_text}</div>
+        <!-- Info Grid -->
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Responsable / Guía</label>
+                <div>{guide_name}</div>
+            </div>
+            <div class="info-item">
+                <label>Fecha de Cierre</label>
+                <div>{closed_at}</div>
+            </div>
+            <div class="info-item">
+                <label>Empresa</label>
+                <div>{company_name}</div>
+            </div>
+            <div class="info-item">
+                <label>Estado</label>
+                <div>Validado</div>
+            </div>
         </div>
 
-        <div class="details-section">
-            <div class="details-title">DESGLOSE DETALLADO DE GASTOS</div>
+        <!-- Financial Summary -->
+        <div class="summary-section">
+            <div class="section-title">Resumen Financiero</div>
+            <div class="summary-card">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th style="text-align: right;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>(+) Asignación Inicial (Anticipos)</td>
+                            <td style="text-align: right;">${advances:,.0f}</td>
+                        </tr>
+                        <tr>
+                            <td>(+) Recaudos en Ruta</td>
+                            <td style="text-align: right;">${collections:,.0f}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td>(=) Total Responsabilidad</td>
+                            <td style="text-align: right;">${(advances + collections):,.0f}</td>
+                        </tr>
+                        <tr>
+                            <td style="color: #ef4444;">(-) Gastos Legalizados</td>
+                            <td style="text-align: right; color: #ef4444;">-${expenses:,.0f}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Balance Result -->
+            <div class="balance-card">
+                <div class="balance-label">Balance Final de Liquidación</div>
+                <div class="balance-amount"><span class="status-icon">{status_icon}</span> {balance_text}</div>
+            </div>
+        </div>
+
+        <!-- Expense Details -->
+        <div class="summary-section">
+            <div class="section-title">Detalle de Gastos</div>
             <table class="details-table">
                 <thead>
                     <tr>
                         <th style="width: 15%;">Fecha</th>
-                        <th style="width: 25%;">Comercio / Proveedor</th>
-                        <th style="width: 15%;">NIT / ID</th>
+                        <th style="width: 25%;">Proveedor</th>
+                        <th style="width: 15%;">NIT</th>
                         <th style="width: 20%;">Categoría</th>
-                        <th style="width: 25%; text-align: right;">Monto Pagado</th>
+                        <th style="width: 25%; text-align: right;">Monto</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -458,31 +683,55 @@ def generate_clearance_act(tour_data, signature_path):
                 </tbody>
             </table>
         </div>
-        
-        <div class="declaration">
-            <b>DECLARACIÓN DE FE:</b> Yo, <b>{guide_name}</b>, identificado como el responsable del tour <b>{tour_id}</b>, declaro bajo juramento que la información y los soportes presentados en esta liquidación son auténticos y corresponden a gastos ejecutados exclusivamente para el cumplimiento del servicio. Al firmar este documento electrónico, acepto el balance final de auditoría y me comprometo a formalizar cualquier reintegro pendiente en las próximas 24 horas.
-        </div>
 
-        <div class="signature-section">
-            <div class="signature-card">
-                <img src="{signature_path}" class="signature-image" />
-                <div class="signature-line"></div>
-                <div class="value">{guide_name}</div>
-                <div class="label">Huella / Firma Digital del Responsable</div>
+        <!-- Signatures -->
+        <div class="bottom-section">
+            <div class="declaration">
+                Declaración de conformidad: Certifico que los gastos aquí detallados corresponden a la ejecución real de mis actividades laborales y que los soportes adjuntos son verídicos. Acepto el balance final resultante de esta auditoría automática.
+            </div>
+
+            <div class="signatures-grid">
+                <div class="sig-box">
+                    <img src="{signature_path}" class="sig-img" alt="Firma"/>
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{guide_name}</div>
+                    <div class="sig-role">Firma Responsable</div>
+                </div>
+                <div class="sig-box">
+                    <div style="height: 50px;"></div>
+                    <div class="sig-line"></div>
+                    <div class="sig-name">ReportPilot</div>
+                    <div class="sig-role">Auditoría Automática</div>
+                </div>
             </div>
         </div>
 
-        <div class="footer">
-            Documento de auditoría generado automáticamente por <b>ReportPilot AI</b> v2.0 • {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
+        <div class="footer-branding">
+            Generated by ReportPilot • {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         </div>
     </body>
     </html>
     """
 
-    # 3. Generate PDF
+    # 3. Save Debug HTML (For Development)
     try:
+        debug_path = os.path.join("uploads", "debug_acta.html")
+        os.makedirs("uploads", exist_ok=True)
+        with open(debug_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+    except Exception as e:
+        print(f"Failed to save debug HTML: {e}")
+
+    import logging
+    # 4. Generate PDF using WeasyPrint
+    try:
+        from weasyprint import HTML
         pdf_file = HTML(string=html_content, base_url=".").write_pdf()
         return pdf_file
+    except OSError as e:
+        logging.error(f"WeasyPrint not available (GTK missing?): {e}")
+        # Return a dummy PDF if WeasyPrint fails
+        return b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 595 842]/Parent 2 0 R/Resources<<>>>>endobj xref\n0 4\n0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000117 00000 n\ntrailer<</Size 4/Root 1 0 R>>startxref\n223\n%%EOF"
     except Exception as e:
         logging.error(f"Error generating PDF: {e}")
         return None

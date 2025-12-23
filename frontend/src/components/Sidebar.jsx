@@ -32,14 +32,10 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
     return (
         <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
-                <div className="logo-container" style={{ paddingBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-                    <img src="/logo.png" alt="ReportPilot" style={{ height: '50px', objectFit: 'contain' }} />
+                <div className="logo-container" style={{ paddingBottom: '1rem', display: 'flex', justifyContent: 'flex-start', paddingLeft: '1rem' }}>
+                    <img src="/logo.png" alt="ReportPilot" style={{ height: '40px', objectFit: 'contain' }} />
                 </div>
-                {user && (
-                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                        {user.email}
-                    </p>
-                )}
+
             </div>
 
             <nav className="sidebar-nav">

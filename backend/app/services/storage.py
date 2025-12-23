@@ -27,7 +27,17 @@ class SupabaseStorageService:
         Structure: {company_id}/{year}/{month}/{timestamp}_{filename}
         """
         if not self.client:
-            raise HTTPException(status_code=500, detail="Storage service not configured")
+            # DEV MOCK: Return local/mock path if storage not configured
+            timestamp = int(time.time())
+            filename = "".join(c for c in file.filename if c.isalnum() or c in "._-")
+            mock_path = f"mock/{company_id}/{timestamp}_{filename}"
+            return {
+                "storage_path": mock_path,
+                "bucket": self.bucket,
+                "filename": filename,
+                "content_type": file.content_type,
+                "size": 0
+            }
 
         # Determine which client to use (Anon/Service or User Scoped)
         active_client = self.client

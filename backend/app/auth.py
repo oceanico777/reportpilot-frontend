@@ -20,9 +20,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     # Development Bypass
     if token == "fake-jwt-token-for-auth":
         return {
-            "id": "e9821814-c159-42b7-8742-167812035978", # Mock user ID
-            "email": "guide@reportpilot.com",
-            "role": "user"
+            "id": "aaaaa814-c159-42b7-8742-167812035978", # Mock user ID (Fresh)
+            "email": "admin-test@reportpilot.com",
+            "role": "ADMIN"
         }
     
     try:
@@ -81,6 +81,7 @@ async def get_user_company(
     For MVP/Demo, if no company exists for the user, create one.
     """
     user_id = current_user["id"]
+    print(f"DEBUG: get_user_company called for user {user_id}")
     
     # Check if user exists in DB (sync with Supabase Auth)
     db_user = db.query(models.User).filter(models.User.id == user_id).first()

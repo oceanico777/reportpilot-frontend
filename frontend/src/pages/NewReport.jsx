@@ -321,7 +321,7 @@ const NewReport = () => {
                     borderLeft: '4px solid #10b981',
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                         <div>
                             <h3 style={{ fontSize: '0.8rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px', fontWeight: 'bold' }}>
                                 Responsabilidad Total (COP)
