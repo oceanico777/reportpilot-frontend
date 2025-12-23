@@ -31,6 +31,15 @@ import Sidebar from './components/Sidebar'
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState('dark-mode');
+
+  useEffect(() => {
+    document.body.className = theme;
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark-mode' ? 'light-mode' : 'dark-mode');
+  };
 
   return (
     <Router>
@@ -56,7 +65,12 @@ function App() {
                     {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
                   </button>
 
-                  <Sidebar isOpen={isSidebarOpen} close={() => setIsSidebarOpen(false)} />
+                  <Sidebar
+                    isOpen={isSidebarOpen}
+                    close={() => setIsSidebarOpen(false)}
+                    toggleTheme={toggleTheme}
+                    currentTheme={theme}
+                  />
 
                   <main className="main-content">
                     <Routes>
