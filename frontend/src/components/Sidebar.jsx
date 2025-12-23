@@ -100,7 +100,7 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                     </button>
 
                     <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#10b981', fontWeight: 'bold', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '1rem' }}>
-                        ReportPilot v1.1.8 (NO SORT)
+                        ReportPilot v1.1.11 (GLOBAL GUARD)
                     </div>
                 </div>
             </nav>
