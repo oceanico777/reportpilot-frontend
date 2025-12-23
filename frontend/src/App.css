@@ -376,8 +376,8 @@ body {
     transform: translateX(-102%) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5) !important;
-    border-right: 3px solid #3b82f6 !important;
-    /* BLUE DEBUG BORDER */
+    border-right: 4px solid #3b82f6 !important;
+    /* VISIBLE BLUE DEBUG BORDER */
     visibility: visible !important;
   }
 
@@ -397,6 +397,5 @@ body {
     padding-left: 1rem;
     padding-right: 1rem;
     overflow-x: hidden;
-    /* Prevent horizontal scroll on body */
   }
 }

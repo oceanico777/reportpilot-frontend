@@ -6,13 +6,26 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
     const [session, setSession] = useState({
-        user: { email: 'guide@reportpilot.com' },
+        user: { email: 'guide@reportpilot.com', role: 'guide' },
         access_token: 'fake-jwt-token-for-auth'
     });
 
     const signOut = () => setSession(null);
-    const signIn = () => setSession({ user: { email: 'guide@reportpilot.com' }, access_token: 'fake-jwt-token-for-auth' });
+    const signIn = (role = 'guide') => setSession({
+        user: { email: `${role}@reportpilot.com`, role: role },
+        access_token: 'fake-jwt-token-for-auth'
+    });
 
-    const value = { user: session?.user, session, signOut, signIn };
+    const switchRole = () => {
+        setSession(prev => ({
+            ...prev,
+            user: {
+                ...prev.user,
+                role: prev.user.role === 'guide' ? 'accountant' : 'guide'
+            }
+        }));
+    };
+
+    const value = { user: session?.user, session, signOut, signIn, switchRole };
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
