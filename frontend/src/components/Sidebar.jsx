@@ -69,9 +69,11 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                     <button onClick={handleLogout} className="sidebar-item" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <LogOut size={20} />
                         <span>Logout</span>
-                </div>
-                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#334155', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    ReportPilot Mobile v1.1
+                    </button>
+
+                    <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#334155', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '1rem' }}>
+                        ReportPilot Mobile v1.1.1
+                    </div>
                 </div>
             </nav>
         </aside>
