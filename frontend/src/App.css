@@ -366,23 +366,25 @@ body {
   .sidebar {
     position: fixed !important;
     top: 0 !important;
-    left: 0 !important;
+    left: -300px !important;
     height: 100vh !important;
-    z-index: 9999 !important;
+    z-index: 10001 !important;
     width: 280px !important;
     background-color: #1e293b !important;
-    display: flex !important;
+    display: none !important;
     flex-direction: column !important;
-    transform: translateX(-102%) !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5) !important;
-    border-right: 4px solid #3b82f6 !important;
-    /* VISIBLE BLUE DEBUG BORDER */
-    visibility: visible !important;
+    transition: left 0.3s ease !important;
+    box-shadow: none !important;
+    border-right: 5px solid #3b82f6 !important;
+    /* DEBUG BORDER */
+    visibility: hidden !important;
   }
 
   .sidebar.open {
-    transform: translateX(0) !important;
+    display: flex !important;
+    left: 0 !important;
+    visibility: visible !important;
+    box-shadow: 10px 0 50px rgba(0, 0, 0, 0.9) !important;
   }
 
   .sidebar-overlay.open {
