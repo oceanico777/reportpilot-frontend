@@ -77,7 +77,7 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                         className="sidebar-item"
                         style={{ width: '100%', textAlign: 'left', background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}
                     >
-                        <UserCheck size={20} color="var(--color-primary)" />
+                        <Users size={20} color="var(--color-primary)" />
                         <span style={{ color: 'var(--color-primary)' }}>Rol: {isAccountant ? 'Contador' : 'Guía'}</span>
                     </button>
 
@@ -100,7 +100,7 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                     </button>
 
                     <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#10b981', fontWeight: 'bold', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '1rem' }}>
-                        ReportPilot v1.1.11 (GLOBAL GUARD)
+                        ReportPilot v1.1.12 (CLEAN)
                     </div>
                 </div>
             </nav>
