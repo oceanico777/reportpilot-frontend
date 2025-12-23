@@ -55,12 +55,12 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                 <div className="nav-section mt-auto">
                     {/* Dark/Light Mode Toggle */}
                     <button
-                        onClick={() => { toggleTheme(); if (close) close(); }}
+                        onClick={() => { if (toggleTheme) toggleTheme(); if (close) close(); }}
                         className="sidebar-item"
                         style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                     >
                         <ThemeIcon size={20} />
-                        <span>{currentTheme === 'dark-mode' ? 'Light Mode' : 'Dark Mode'}</span>
+                        <span>{currentTheme === 'dark-mode' ? 'Modo Claro' : 'Modo Oscuro'}</span>
                     </button>
 
                     <div onClick={handleLinkClick}>
