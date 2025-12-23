@@ -99,8 +99,8 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                         <span>Logout</span>
                     </button>
 
-                    <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#334155', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '1rem' }}>
-                        ReportPilot v1.1.3
+                    <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#10b981', fontWeight: 'bold', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '1rem' }}>
+                        ReportPilot v1.1.5 (LIVE)
                     </div>
                 </div>
             </nav>

@@ -202,7 +202,7 @@ const Dashboard = () => {
             <header className="page-header" style={{ marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', background: 'var(--gradient-primary)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', letterSpacing: '-0.03em' }}>
-                        Dashboard Inteligente
+                        Dashboard v1.1.5
                     </h1>
                     <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem', fontSize: '1.1rem' }}>Visión en tiempo real de tus finanzas</p>
                 </div>
