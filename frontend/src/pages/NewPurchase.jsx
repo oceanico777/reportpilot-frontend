@@ -3,138 +3,34 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import FileUpload from '../components/FileUpload';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WifiOff, Store, Calendar, FileText } from 'lucide-react';
+import { WifiOff, Store, Calendar, FileText, XCircle } from 'lucide-react';
 import { saveReportOffline } from '../utils/offlineManager';
 
-const NewPurchase = () => {
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-
-    // Form Fields
-    const [providerId, setProviderId] = useState(''); // Selected Provider
-    const [manualVendor, setManualVendor] = useState(''); // If provider not in list
-    const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
-    const [sourceFilePath, setSourceFilePath] = useState('');
-
-    // Data Management
-    const [providers, setProviders] = useState([]);
-    const [extractedData, setExtractedData] = useState(null);
-    const [selectedCategory, setSelectedCategory] = useState(null);
-
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
+// Helper Component to fetch products when provider changes
+const InventoryFetcher = ({ providerId, onProductsLoaded }) => {
     const { session } = useAuth();
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
-
-    // Categories
-    const CATEGORIES = [
-        { id: 'Carnes', label: 'Carnes', icon: '🥩', color: 'from-red-500 to-rose-700' },
-        { id: 'Verduras', label: 'Verduras', icon: '🥦', color: 'from-green-400 to-emerald-600' },
-        { id: 'Bebidas', label: 'Bebidas', icon: '🥤', color: 'from-blue-400 to-cyan-600' },
-        { id: 'Aseo', label: 'Aseo', icon: '🧼', color: 'from-purple-400 to-indigo-500' },
-        { id: 'Mantenimiento', label: 'Mantenimiento', icon: '🔧', color: 'from-gray-400 to-slate-600' },
-        { id: 'Desechables', label: 'Desechables', icon: '🥡', color: 'from-yellow-400 to-orange-500' },
-        { id: 'Otros', label: 'Otros', icon: '📦', color: 'from-gray-400 to-gray-600' }
-    ];
-
-    // Listen for connectivity
     useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
-        const handleOffline = () => setIsOnline(false);
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
-
-    // Fetch Providers
-    useEffect(() => {
-        if (session?.access_token) {
-            fetchProviders();
-        }
-    }, [session]);
-
-    const fetchProviders = async () => {
-        try {
-            const res = await fetch(`${API_URL}/providers`, {
-                headers: { "Authorization": `Bearer ${session.access_token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setProviders(data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch providers", err);
-            // Fallback mock
-            setProviders([
-                { id: '1', name: 'Coca Cola', category: 'Bebidas' },
-                { id: '2', name: 'MacPollo', category: 'Carnes' }
-            ]);
-        }
-    };
-
-    const handleUploadSuccess = (filePath, ocrData) => {
-        setSourceFilePath(filePath);
-        if (ocrData && !ocrData.error) {
-            setExtractedData(ocrData);
-
-            // Auto-fill logic
-            if (ocrData.date) setPurchaseDate(ocrData.date);
-            if (ocrData.vendor) setManualVendor(ocrData.vendor);
-
-            // Try to match provider by name
-            const match = providers.find(p => p.name.toLowerCase().includes(ocrData.vendor?.toLowerCase()));
-            if (match) setProviderId(match.id);
-
-            // Category suggestion
-            if (ocrData.category) {
-                const catMatch = CATEGORIES.find(c => c.id === ocrData.category || c.label === ocrData.category);
-                if (catMatch) setSelectedCategory(catMatch.id);
-            }
-
-            // Items
-            if (ocrData.items) {
+        if (providerId && session?.access_token) {
+            const fetchProducts = async () => {
                 try {
-                    const parsedItems = typeof ocrData.items === 'string' ? JSON.parse(ocrData.items) : ocrData.items;
-                    setItems(parsedItems || []);
-                } catch (e) {
-                    console.error("Error parsing items", e);
-                }
-            }
+                    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+                    const res = await fetch(`${API_URL}/products/?provider_id=${providerId}`, {
+                        headers: { "Authorization": `Bearer ${session.access_token}` }
+                    });
+                    if (res.ok) {
+                        onProductsLoaded(await res.json());
+                    }
+                } catch (e) { console.error(e); }
+            };
+            fetchProducts();
+        } else {
+            onProductsLoaded([]);
         }
-    };
+    }, [providerId, session]);
+    return null;
+};
 
-    // Items State
-    const [items, setItems] = useState([]);
-    const [availableProducts, setAvailableProducts] = useState([]);
-
-    // Helper Component to fetch products when provider changes
-    const InventoryFetcher = ({ providerId, onProductsLoaded }) => {
-        const { session } = useAuth();
-        useEffect(() => {
-            if (providerId && session?.access_token) {
-                const fetchProducts = async () => {
-                    try {
-                        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
-                        const res = await fetch(`${API_URL}/products/?provider_id=${providerId}`, {
-                            headers: { "Authorization": `Bearer ${session.access_token}` }
-                        });
-                        if (res.ok) {
-                            onProductsLoaded(await res.json());
-                        }
-                    } catch (e) { console.error(e); }
-                };
-                fetchProducts();
-            } else {
-                onProductsLoaded([]);
-            }
-        }, [providerId, session]);
-        return null;
-    };
+const NewPurchase = () => {
 
     const handleItemChange = (idx, field, val) => {
         const newItems = [...items];
