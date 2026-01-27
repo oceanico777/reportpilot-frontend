@@ -6,7 +6,7 @@ const TeamManagement = () => {
     const { session } = useAuth();
     const [teamData, setTeamData] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [newUser, setNewUser] = useState({ full_name: '', email: '', role: 'GUIDE' });
+    const [newUser, setNewUser] = useState({ full_name: '', email: '', role: 'STAFF' });
     const [creating, setCreating] = useState(false);
 
     const handleCreateUser = async (e) => {
@@ -26,7 +26,7 @@ const TeamManagement = () => {
             if (res.ok) {
                 alert("Usuario creado exitosamente. Puede iniciar sesión con este correo.");
                 setShowModal(false);
-                setNewUser({ full_name: '', email: '', role: 'GUIDE' });
+                setNewUser({ full_name: '', email: '', role: 'STAFF' });
                 fetchTeam();
             } else {
                 const err = await res.json();
@@ -79,7 +79,7 @@ const TeamManagement = () => {
                 {/* Members Table Section */}
                 <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
                     <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)' }}>Guías del Equipo</h3>
+                        <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)' }}>Personal del Equipo</h3>
                         <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>{teamData.members.length} miembros</span>
                     </div>
 
@@ -109,7 +109,7 @@ const TeamManagement = () => {
                                                     </span>
                                                     :
                                                     <span style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                        <User size={12} /> Guía
+                                                        <User size={12} /> Staff
                                                     </span>
                                                 }
                                             </div>
@@ -151,10 +151,10 @@ const TeamManagement = () => {
                     <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8))' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem', color: '#38bdf8' }}>
                             <Users size={24} />
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff', margin: 0 }}>Invitar Guías</h3>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff', margin: 0 }}>Invitar Personal</h3>
                         </div>
                         <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                            Comparte este código único para que los nuevos guías se unan automáticamente a tu organización.
+                            Comparte este código único para que los nuevos miembros del staff se unan automáticamente a tu organización.
                         </p>
 
                         <div style={{ position: 'relative', marginBottom: '1rem' }}>
@@ -180,7 +180,7 @@ const TeamManagement = () => {
                     <div className="glass-card" style={{ padding: '1.5rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
                         <h4 style={{ color: '#fbbf24', fontSize: '0.95rem', fontWeight: '600', marginBottom: '0.5rem' }}>Nota Importante</h4>
                         <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: '1.5' }}>
-                            Los guías que se registren tendrán acceso limitado hasta que se les asigne un tour activo.
+                            El personal que se registre tendrá acceso limitado hasta que se le asigne un turno activo.
                         </p>
                     </div>
                 </div>
@@ -226,7 +226,7 @@ const TeamManagement = () => {
                                     value={newUser.role}
                                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                                 >
-                                    <option value="GUIDE">Guía</option>
+                                    <option value="GUIDE">Staff / Cajero</option>
                                     <option value="ADMIN">Administrador</option>
                                 </select>
                             </div>

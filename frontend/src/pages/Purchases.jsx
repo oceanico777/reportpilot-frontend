@@ -97,7 +97,7 @@ const Reports = () => {
             <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1>Historial</h1>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Registro completo de actividad</p>
+                    <p style={{ color: 'var(--color-text-muted)' }}>Registro completo de compras e insumos</p>
                 </div>
                 <button
                     onClick={() => setIsExportOpen(true)}
@@ -141,8 +141,8 @@ const Reports = () => {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Reporte</th>
-                                <th>Cliente</th>
+                                <th>Proveedor</th>
+                                <th>Referencia</th>
                                 <th>Categoría</th>
                                 <th>Monto</th>
                                 <th>Fecha</th>
@@ -164,7 +164,7 @@ const Reports = () => {
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: '500' }}>
-                                                    {report.tour_id || 'No Tour ID'}
+                                                    {report.provider?.name || report.vendor || 'Proveedor Desconocido'}
                                                 </div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                                                     {report.vendor || 'Unknown Vendor'}
@@ -248,11 +248,11 @@ const Reports = () => {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                             <div>
-                                <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Tour ID</label>
-                                <p style={{ fontWeight: '500', fontSize: '1.1rem' }}>{selectedReport.tour_id || 'N/A'}</p>
+                                <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>ID Proveedor / Turno</label>
+                                <p style={{ fontWeight: '500', fontSize: '1.1rem' }}>{selectedReport.provider_id || selectedReport.tour_id || 'N/A'}</p>
                             </div>
                             <div>
-                                <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Cliente</label>
+                                <label style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Referencia</label>
                                 <p style={{ fontWeight: '500', fontSize: '1.1rem' }}>{selectedReport.client_name || 'N/A'}</p>
                             </div>
 

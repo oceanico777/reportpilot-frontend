@@ -22,6 +22,7 @@ import { getPendingReports, syncOfflineReports } from '../utils/offlineManager';
 const Dashboard = () => {
     const { session } = useAuth();
     const [stats, setStats] = useState({
+        // Mock data now reflects Restaurant Context
         total_reports: 124,
         total_spent: 45600000,
         monthly_stats: [
@@ -33,23 +34,25 @@ const Dashboard = () => {
             { month: 'Jun', total: 6100000 },
         ],
         client_stats: [
-            { name: 'Grupo A', value: 15000000 },
-            { name: 'Corporativo B', value: 12000000 },
-            { name: 'Eventos C', value: 8000000 },
-            { name: 'Turismo D', value: 6000000 },
-            { name: 'Otros', value: 4600000 },
+            { name: 'Surtifruver', value: 15000000 },
+            { name: 'Carnecol', value: 12000000 },
+            { name: 'Lacteos del Valle', value: 8000000 },
+            { name: 'Makro', value: 6000000 },
+            { name: 'Plaza de Mercado', value: 4600000 },
         ],
         recent_activity: [
-            { id: 1, tour_id: 'T-2025-001', created_at: '2025-10-15', amount: 120000 },
-            { id: 2, tour_id: 'T-2025-002', created_at: '2025-10-14', amount: 45000 },
-            { id: 3, tour_id: 'T-2025-003', created_at: '2025-10-13', amount: 890000 },
-            { id: 4, tour_id: 'T-2025-004', created_at: '2025-10-12', amount: 230000 },
+            { id: 1, tour_id: 'COMPRA-001', created_at: '2025-10-15', amount: 120000, category: 'Pulpas de Fruta' },
+            { id: 2, tour_id: 'COMPRA-002', created_at: '2025-10-14', amount: 45000, category: 'Verduras' },
+            { id: 3, tour_id: 'COMPRA-003', created_at: '2025-10-13', amount: 890000, category: 'Carnes' },
+            { id: 4, tour_id: 'COMPRA-004', created_at: '2025-10-12', amount: 230000, category: 'Lacteos' },
         ],
         category_stats: [
-            { name: '🍽️ Restaurante', value: 15400000 },
-            { name: '🎟️ Atractivo', value: 12500000 },
-            { name: '🍿 Snack', value: 4200000 },
-            { name: '📦 Otros', value: 13500000 },
+            { name: '🍓 Pulpas', value: 8400000 },
+            { name: '🥔 Papa Criolla', value: 4200000 },
+            { name: '🥕 Zanahorias', value: 3100000 },
+            { name: '🥛 Leche', value: 5500000 },
+            { name: '💧 Botellones Agua', value: 2500000 },
+            { name: '🍟 Papa Pastusa', value: 3800000 },
         ]
     });
     const [loading, setLoading] = useState(true);
@@ -104,10 +107,37 @@ const Dashboard = () => {
         }
     };
 
+    const [priceTrendData, setPriceTrendData] = useState([]);
+    const [trendProduct, setTrendProduct] = useState('Papa'); // Default
+    const TREND_PRODUCTS = ['Papa', 'Carne', 'Tomate', 'Aceite', 'Leche', 'Arroz'];
+
+    useEffect(() => {
+        if (session?.access_token) {
+            fetchPriceTrends();
+        }
+    }, [session, trendProduct]);
+
+    const fetchPriceTrends = async () => {
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const res = await fetch(`${API_URL}/reports/price-trends?query=${trendProduct}`, {
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setPriceTrendData(data);
+            }
+        } catch (err) {
+            console.error("Error fetching price trends", err);
+        }
+    };
+
     const handleDateFilter = (rangeType) => {
         const now = new Date();
         let start = null;
         let end = new Date(); // Today
+
+        // ... (rest of logic unchanged)
 
         if (rangeType === 'month') {
             // First day of current month
@@ -291,7 +321,7 @@ const Dashboard = () => {
                         <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
                             <TrendingUp size={24} />
                         </div>
-                        <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Gasto Total</span>
+                        <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Costo Operativo de Insumos</span>
                     </div>
                     <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#fff', fontFamily: 'var(--font-heading)' }}>
                         {formatCurrency(stats.total_spent)}
@@ -312,13 +342,13 @@ const Dashboard = () => {
                         <div style={{ padding: '10px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.2)', color: '#a78bfa' }}>
                             <PieChartIcon size={24} />
                         </div>
-                        <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Total Reportes</span>
+                        <span style={{ color: 'var(--color-text-muted)', fontSize: '1rem', fontWeight: '500' }}>Total Facturas</span>
                     </div>
                     <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#fff', fontFamily: 'var(--font-heading)' }}>
                         {stats.total_reports}
                     </div>
                     <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                        Registros procesados
+                        Facturas procesadas
                     </div>
                 </div>
 
@@ -349,7 +379,7 @@ const Dashboard = () => {
                             <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>
                                 <Briefcase size={20} />
                             </div>
-                            <h3 style={{ fontSize: '1.2rem', color: '#fff', margin: 0 }}>Presupuesto Tour: <span style={{ color: '#10b981' }}>{stats.active_tour.tour_id}</span></h3>
+                            <h3 style={{ fontSize: '1.2rem', color: '#fff', margin: 0 }}>Caja Menor: <span style={{ color: '#10b981' }}>{stats.active_tour.tour_id || 'Semanal'}</span></h3>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Estado Actual: </span>
@@ -372,7 +402,7 @@ const Dashboard = () => {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
                         <span>Gastado: <span style={{ color: '#fff' }}>{formatCurrency(stats.active_tour.total_spent)}</span></span>
-                        <span>Capacidad: <span style={{ color: '#fff' }}>{formatCurrency(stats.active_tour.total_budget)}</span></span>
+                        <span>Presupuesto: <span style={{ color: '#fff' }}>{formatCurrency(stats.active_tour.total_budget)}</span></span>
                     </div>
                 </div>
             )}
@@ -384,7 +414,7 @@ const Dashboard = () => {
                 <div style={{ gridColumn: 'span 12' }} className="lg:col-span-8">
                     <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '350px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)' }}>Evolución de Gastos</h3>
+                            <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)' }}>Evolución de Costos</h3>
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={stats.monthly_stats} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -404,10 +434,49 @@ const Dashboard = () => {
                     </div>
                 </div>
 
+                {/* Price Trend Chart - New Feature */}
+                <div style={{ gridColumn: 'span 12' }} className="lg:col-span-12">
+                    <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <TrendingUp size={24} className="text-emerald-400" />
+                                <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', margin: 0 }}>
+                                    Rastreador de Precios: <span className="text-emerald-400">{trendProduct}</span>
+                                </h3>
+                            </div>
+                            <select
+                                value={trendProduct}
+                                onChange={(e) => setTrendProduct(e.target.value)}
+                                className="bg-slate-800 text-white border border-slate-700 rounded px-3 py-1"
+                            >
+                                {TREND_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                        </div>
+
+                        <div style={{ height: '250px', width: '100%' }}>
+                            {priceTrendData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={priceTrendData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                        <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                                        <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} tickFormatter={(val) => `$${val}`} />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+                                        <Line type="monotone" dataKey="price" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex-center h-full text-slate-500">
+                                    <p>No hay datos suficientes para {trendProduct} aún.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 {/* Donut Chart - Categories */}
                 <div style={{ gridColumn: 'span 12' }} className="lg:col-span-4">
                     <div className="glass-card" style={{ padding: '1.5rem', height: '100%', minHeight: '350px' }}>
-                        <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', marginBottom: '1rem' }}>Por Categoría</h3>
+                        <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', marginBottom: '1rem' }}>Insumos Principales</h3>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
@@ -440,7 +509,7 @@ const Dashboard = () => {
                     <div className="glass-card" style={{ padding: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem' }}>
                             <Briefcase size={20} color="var(--color-primary)" />
-                            <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', margin: 0 }}>Top Clientes</h3>
+                            <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-main)', margin: 0 }}>Top Proveedores</h3>
                         </div>
                         {stats.client_stats && stats.client_stats.length > 0 ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -475,7 +544,7 @@ const Dashboard = () => {
                             <table className="data-table" style={{ width: '100%' }}>
                                 <thead>
                                     <tr>
-                                        <th style={{ textAlign: 'left', paddingBottom: '0.8rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>DESCRIPCIÓN</th>
+                                        <th style={{ textAlign: 'left', paddingBottom: '0.8rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PROVEEDOR / REF</th>
                                         <th style={{ textAlign: 'right', paddingBottom: '0.8rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MONTO</th>
                                     </tr>
                                 </thead>

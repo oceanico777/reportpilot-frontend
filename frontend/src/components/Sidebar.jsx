@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, Settings, LogOut, Sun, Moon, Users, BarChart3, Calculator } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, Settings, LogOut, Sun, Moon, Users, BarChart3, Calculator, Store, ClipboardCheck, Package, ChefHat } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const SidebarItem = ({ icon: Icon, label, to, active }) => {
@@ -29,45 +29,54 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
 
     const ThemeIcon = currentTheme === 'dark-mode' ? Sun : Moon;
 
-    const isAccountant = user?.role === 'accountant';
+    const isAccountant = user?.role === 'STAFF'; // Assuming STAFF has limited view vs ADMIN
 
     return (
         <aside className={`sidebar ${isOpen ? 'open' : ''} mobile-sidebar`}>
             <div className="sidebar-header">
                 <div className="logo-container" style={{ paddingBottom: '1rem', display: 'flex', justifyContent: 'flex-start', paddingLeft: '1rem' }}>
-                    <img src="/logo.png" alt="ReportPilot" style={{ height: '40px', objectFit: 'contain' }} />
+                    <img src="/logo.png" alt="RestoPilot" style={{ height: '40px', objectFit: 'contain' }} />
                 </div>
             </div>
 
             <nav className="sidebar-nav">
                 <div className="nav-section">
-                    <span className="nav-label">MAIN</span>
+                    <span className="nav-label">GESTIÓN</span>
                     <div onClick={handleLinkClick}>
                         <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" active={location.pathname === '/dashboard'} />
                     </div>
 
-                    {!isAccountant ? (
-                        <>
-                            <div onClick={handleLinkClick}>
-                                <SidebarItem icon={FileText} label="Reports" to="/reports" active={location.pathname.startsWith('/reports')} />
-                            </div>
-                            <div onClick={handleLinkClick}>
-                                <SidebarItem icon={PlusCircle} label="New Report" to="/new" active={location.pathname === '/new'} />
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div onClick={handleLinkClick}>
-                                <SidebarItem icon={BarChart3} label="Accountant View" to="/admin/dashboard" active={location.pathname === '/admin/dashboard'} />
-                            </div>
-                            <div onClick={handleLinkClick}>
-                                <SidebarItem icon={Users} label="Team Management" to="/team" active={location.pathname === '/team'} />
-                            </div>
-                            <div onClick={handleLinkClick}>
-                                <SidebarItem icon={Calculator} label="Business Insights" to="/insights" active={location.pathname === '/insights'} />
-                            </div>
-                        </>
-                    )}
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={PlusCircle} label="Registrar Compra" to="/new" active={location.pathname === '/new'} />
+                    </div>
+
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={FileText} label="Compras" to="/purchases" active={location.pathname.startsWith('/purchases')} />
+                    </div>
+
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={Store} label="Proveedores" to="/providers" active={location.pathname === '/providers'} />
+                    </div>
+
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={Package} label="Inventario" to="/inventory" active={location.pathname === '/inventory'} />
+                    </div>
+
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={ChefHat} label="Recetas" to="/recipes" active={location.pathname === '/recipes'} />
+                    </div>
+
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={Calculator} label="Presupuestos" to="/budgets" active={location.pathname === '/budgets'} />
+                    </div>
+
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={ClipboardCheck} label="Cierre Diario" to="/closures" active={location.pathname === '/closures'} />
+                    </div>
+
+                    <div onClick={handleLinkClick}>
+                        <SidebarItem icon={Users} label="Personal" to="/team" active={location.pathname === '/team'} />
+                    </div>
                 </div>
 
                 <div className="nav-section mt-auto">
@@ -78,7 +87,7 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                         style={{ width: '100%', textAlign: 'left', background: 'rgba(59, 130, 246, 0.1)', border: '1px dashed var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}
                     >
                         <Users size={20} color="var(--color-primary)" />
-                        <span style={{ color: 'var(--color-primary)' }}>Rol: {isAccountant ? 'Contador' : 'Guía'}</span>
+                        <span style={{ color: 'var(--color-primary)' }}>Rol: {user?.role || 'User'}</span>
                     </button>
 
                     {/* Dark/Light Mode Toggle */}
@@ -92,15 +101,15 @@ const Sidebar = ({ toggleTheme, currentTheme, isOpen, close }) => {
                     </button>
 
                     <div onClick={handleLinkClick}>
-                        <SidebarItem icon={Settings} label="Settings" to="/settings" active={location.pathname === '/settings'} />
+                        <SidebarItem icon={Settings} label="Configuración" to="/settings" active={location.pathname === '/settings'} />
                     </div>
                     <button onClick={handleLogout} className="sidebar-item" style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <LogOut size={20} />
-                        <span>Logout</span>
+                        <span>Cerrar Sesión</span>
                     </button>
 
                     <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.6rem', color: '#10b981', fontWeight: 'bold', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '1rem' }}>
-                        ReportPilot v1.1.12 (CLEAN)
+                        RestaurantPilot v2.0
                     </div>
                 </div>
             </nav>

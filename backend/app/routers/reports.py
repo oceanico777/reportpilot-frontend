@@ -23,12 +23,13 @@ def startup_event():
 def export_zip_endpoint(
     month: int = Query(...),
     year: int = Query(...),
+    status: Optional[str] = Query(None, description="Filter by status: 'paid', 'pending', or None for all"),
     db: Session = Depends(get_db),
     company_id: str = Depends(get_user_company)
 ):
     # Run synchronously for immediate download (MVP)
     # This calls the task function directly instead of queueing it
-    result = tasks.export_receipts_zip(company_id, month, year)
+    result = tasks.export_receipts_zip(company_id, month, year, status_filter=status)
     
     if result.get("status") == "failed":
         raise HTTPException(status_code=400, detail=result.get("message"))
@@ -509,3 +510,90 @@ def list_admin_transactions(
         query = query.filter(models.Report.year == year)
         
     return query.order_by(models.Report.created_at.desc()).offset(skip).limit(limit).all()
+
+@router.get("/price-trends", response_model=List[dict])
+def get_price_trends(
+    query: str = Query(..., min_length=2),
+    db: Session = Depends(get_db),
+    company_id: str = Depends(get_user_company)
+):
+    """
+    Returns price history for a given product name (fuzzy search).
+    """
+    # Find items matching the query
+    # Join with Purchase to get the Date
+    # We want: Date, Unit Price
+    
+    # Lowercase for case-insensitivity
+    search_term = f"%{query.lower()}%"
+    
+    results = db.query(
+        models.Purchase.date,
+        func.avg(models.PurchaseItem.unit_price).label('avg_price')
+    ).join(
+        models.PurchaseItem, models.Purchase.id == models.PurchaseItem.purchase_id
+    ).filter(
+        models.Purchase.company_id == company_id,
+        func.lower(models.PurchaseItem.name).like(search_term),
+        models.PurchaseItem.unit_price > 0 # Ignore zero prices
+    ).group_by(
+        models.Purchase.date
+    ).order_by(
+        models.Purchase.date.asc()
+    ).all()
+    
+    # Format
+    return [
+        {"date": r.date.strftime("%Y-%m-%d"), "price": int(r.avg_price)}
+        for r in results
+    ]
+@router.get("/provider-trends", response_model=List[dict])
+def get_provider_trends(
+    months: int = 6,
+    db: Session = Depends(get_db),
+    company_id: str = Depends(get_user_company)
+):
+    """
+    Returns monthly spending trends per provider for the last N months.
+    Output: [{ "month": "Jan", "Coca Cola": 100, "MacPollo": 200 }, ...]
+    """
+    # Calculate start date
+    # Simple logic: Go back N months from today
+    # (For production, better date handling suggested)
+    
+    # query all purchases with provider info
+    # We do python-side aggregation for DB compatibility
+    results = db.query(models.Purchase).options(
+        db.joinedload(models.Purchase.provider)
+    ).filter(
+        models.Purchase.company_id == company_id,
+        models.Purchase.provider_id != None  # Only linked purchases
+    ).order_by(models.Purchase.date.asc()).all()
+    
+    data_map = {} # Key: "YYYY-MM", Value: { "provider_name": amount }
+    
+    for p in results:
+        month_key = p.date.strftime("%b %Y") # e.g. "Jan 2024"
+        prov_name = p.provider.name if p.provider else "Unknown"
+        amount = p.amount or 0
+        
+        if month_key not in data_map:
+            data_map[month_key] = {}
+        
+        data_map[month_key][prov_name] = data_map[month_key].get(prov_name, 0) + amount
+        
+    # Transform to list
+    final_list = []
+    # Sort by date implicitly if we iterate the map keys in order? 
+    # Better to use the known sorted order from the query or sort keys now.
+    # Quick fix: Sort keys by datetime parsing
+    
+    sorted_keys = sorted(data_map.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
+    
+    for m in sorted_keys:
+        item = {"month": m}
+        item.update(data_map[m])
+        final_list.append(item)
+        
+    # Limit to last N months
+    return final_list[-months:]

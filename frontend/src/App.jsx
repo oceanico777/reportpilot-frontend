@@ -19,14 +19,17 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Login } from './components/Login'
 import Dashboard from './pages/Dashboard'
-import NewReport from './pages/NewReport'
-import Planning from './pages/Planning'
-import Reports from './pages/Reports'
+import NewPurchase from './pages/NewPurchase'
+import Budgets from './pages/Budgets'
+import Purchases from './pages/Purchases'
 import Insights from './pages/Insights'
 import AccountantDashboard from './pages/AccountantDashboard'
 import TeamManagement from './pages/TeamManagement'
 import LandingPage from './pages/LandingPage'
-import TourClosure from './pages/TourClosure'
+import DailyClosures from './pages/DailyClosures'
+import Providers from './pages/Providers'
+import Inventory from './pages/Inventory'
+import Recipes from './pages/Recipes'
 import Sidebar from './components/Sidebar'
 
 import ErrorBoundary from './components/ErrorBoundary'
@@ -78,14 +81,17 @@ function App() {
                     <main className="main-content">
                       <Routes>
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/reports" element={<Reports />} />
-                        <Route path="/new" element={<NewReport />} />
-                        <Route path="/planning" element={<Planning />} />
+                        <Route path="/purchases" element={<Purchases />} />
+                        <Route path="/new" element={<NewPurchase />} />
+                        <Route path="/budgets" element={<Budgets />} />
                         <Route path="/insights" element={<Insights />} />
+                        <Route path="/providers" element={<Providers />} />
+                        <Route path="/inventory" element={<Inventory />} />
+                        <Route path="/recipes" element={<Recipes />} />
                         <Route path="/admin/dashboard" element={<AccountantDashboard />} />
                         <Route path="/team" element={<TeamManagement />} />
                         <Route path="/settings" element={<div className="page-content"><h1>Settings</h1></div>} />
-                        <Route path="/tour-closure/:tourId" element={<TourClosure />} />
+                        <Route path="/closures" element={<DailyClosures />} />
 
                         {/* Fallback to dashboard if inside app */}
                         <Route path="*" element={<Dashboard />} />

@@ -13,7 +13,8 @@ const AccountantDashboard = () => {
     const [filters, setFilters] = useState({
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
-        user_id: ''
+        user_id: '',
+        status: 'all' // 'all', 'paid', 'pending'
     });
     const [exporting, setExporting] = useState(false);
 
@@ -84,7 +85,12 @@ const AccountantDashboard = () => {
         setExporting(true);
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
-            const res = await fetch(`${API_URL}/reports/admin/export-zip?month=${filters.month}&year=${filters.year}`, {
+            let query = `month=${filters.month}&year=${filters.year}`;
+            if (filters.status && filters.status !== 'all') {
+                query += `&status=${filters.status}`;
+            }
+
+            const res = await fetch(`${API_URL}/reports/admin/export-zip?${query}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
@@ -147,7 +153,7 @@ const AccountantDashboard = () => {
                     <h1 style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', background: 'var(--gradient-gold)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', letterSpacing: '-0.03em' }}>
                         Portal Contable
                     </h1>
-                    <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem', fontSize: '1.1rem' }}>Auditoría y control de gastos por Tour</p>
+                    <p style={{ color: 'var(--color-text-muted)', marginTop: '0.5rem', fontSize: '1.1rem' }}>Auditoría y control de gastos por Turno</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -192,7 +198,7 @@ const AccountantDashboard = () => {
                         <Search size={18} color="var(--color-text-muted)" />
                         <input
                             type="text"
-                            placeholder="Filtrar por Guía (ID)..."
+                            placeholder="Filtrar por Encargado..."
                             className="form-input"
                             style={{ width: '180px', padding: '0.6rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'white' }}
                             value={filters.user_id}
@@ -201,19 +207,32 @@ const AccountantDashboard = () => {
                     </div>
                 </div>
 
-                <button
-                    onClick={handleExportZip}
-                    disabled={exporting}
-                    className="btn-premium"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1.5rem', fontSize: '0.9rem' }}
-                >
-                    {exporting ? (
-                        <div className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
-                    ) : (
-                        <Download size={18} />
-                    )}
-                    <span>{exporting ? 'Generando ZIP...' : 'Descargar Recibos (ZIP)'}</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select
+                        className="form-input"
+                        style={{ width: 'auto', padding: '0.6rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'white', fontSize: '0.9rem' }}
+                        value={filters.status}
+                        onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                    >
+                        <option value="all" style={{ background: 'var(--color-surface)' }}>Todo</option>
+                        <option value="pending" style={{ background: 'var(--color-surface)' }}>Pendientes</option>
+                        <option value="paid" style={{ background: 'var(--color-surface)' }}>Pagados</option>
+                    </select>
+
+                    <button
+                        onClick={handleExportZip}
+                        disabled={exporting}
+                        className="btn-premium"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.75rem 1.5rem', fontSize: '0.9rem' }}
+                    >
+                        {exporting ? (
+                            <div className="animate-spin" style={{ width: '16px', height: '16px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
+                        ) : (
+                            <Download size={18} />
+                        )}
+                        <span>{exporting ? 'Generando ZIP...' : 'Descargar Soporte'}</span>
+                    </button>
+                </div>
             </div>
 
             {/* VIEW TOGGLE */}
@@ -227,7 +246,7 @@ const AccountantDashboard = () => {
                         border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '500'
                     }}
                 >
-                    📁 Resumen por Tour
+                    📁 Resumen por Turno
                 </button>
                 <button
                     onClick={() => setViewMode('transactions')}
@@ -251,8 +270,8 @@ const AccountantDashboard = () => {
                         <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)' }}>
                                 <tr>
-                                    <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOUR ID</th>
-                                    <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>GUÍA</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>TURNO / CAJA</th>
+                                    <th style={{ padding: '1.2rem', textAlign: 'left', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ENCARGADO</th>
                                     <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💰 ANTICIPO</th>
                                     <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💵 RECAUDO</th>
                                     <th style={{ padding: '1.2rem', textAlign: 'right', color: 'var(--color-text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📉 GASTOS</th>
@@ -265,7 +284,7 @@ const AccountantDashboard = () => {
                                 {loading ? (
                                     <tr><td colSpan="8" style={{ textAlign: 'center', padding: '3rem' }}><div className="animate-spin" style={{ display: 'inline-block', width: '30px', height: '30px', border: '3px solid var(--color-accent)', borderTopColor: 'transparent', borderRadius: '50%' }}></div></td></tr>
                                 ) : summary.length === 0 ? (
-                                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-muted)' }}>No hay tours registrados.</td></tr>
+                                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '4rem', color: 'var(--color-text-muted)' }}>No hay turnos registrados.</td></tr>
                                 ) : (
                                     summary.map((tour, idx) => {
                                         const anticipo = tour.total_advances || 0;
@@ -275,7 +294,7 @@ const AccountantDashboard = () => {
                                         return (
                                             <tr key={idx} className="table-row-hover" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                                                 <td style={{ padding: '1rem' }}>{tour.tour_id}</td>
-                                                <td style={{ padding: '1rem' }}>{tour.guide_name || 'Guía'}</td>
+                                                <td style={{ padding: '1rem' }}>{tour.guide_name || 'Staff'}</td>
                                                 <td style={{ padding: '1rem', textAlign: 'right', color: '#fbbf24' }}>{formatCurrency(anticipo)}</td>
                                                 <td style={{ padding: '1rem', textAlign: 'right', color: '#6ee7b7' }}>{formatCurrency(recaudo)}</td>
                                                 <td style={{ padding: '1rem', textAlign: 'right' }}>{formatCurrency(gastos)}</td>
@@ -302,7 +321,7 @@ const AccountantDashboard = () => {
                             <thead style={{ background: 'rgba(56, 189, 248, 0.1)', backdropFilter: 'blur(8px)' }}>
                                 <tr>
                                     <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>FECHA</th>
-                                    <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>TOUR REF</th>
+                                    <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>REF TURNO</th>
                                     <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>PROVEEDOR</th>
                                     <th style={{ padding: '1rem', textAlign: 'left', color: '#38bdf8' }}>CATEGORÍA</th>
                                     <th style={{ padding: '1rem', textAlign: 'right', color: '#38bdf8' }}>MONTO</th>

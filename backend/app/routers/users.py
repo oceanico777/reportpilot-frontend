@@ -30,13 +30,13 @@ def join_organization(
         db_user = models.User(
             id=user_id,
             email=current_user["email"],
-            role=models.UserRole.GUIDE.value # Joining users are Guides by default
+            role=models.UserRole.STAFF.value # Joining users are Staff by default
         )
         db.add(db_user)
         
     # Update Membership
     db_user.company_id = company.id
-    db_user.role = models.UserRole.GUIDE.value # Ensure they become Guide
+    db_user.role = models.UserRole.STAFF.value # Ensure they become Staff
     
     db.commit()
     return {"status": "success", "company_name": company.name}

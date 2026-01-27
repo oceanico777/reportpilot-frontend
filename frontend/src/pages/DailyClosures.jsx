@@ -5,7 +5,8 @@ import { ArrowLeft, CheckCircle, XCircle, PenTool, Eraser } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const TourClosure = () => {
-    const { tourId } = useParams();
+    // const { tourId } = useParams(); // Not used
+    // const tourId = "DAILY"; // Placeholder if needed by other logic, but removed from fetch
     const navigate = useNavigate();
     const { session } = useAuth();
 
@@ -24,21 +25,26 @@ const TourClosure = () => {
     // 1. Fetch Summary Data on Mount
     useEffect(() => {
         fetchSummary();
-    }, [tourId, session]);
+    }, [session]); // Removed tourId dependency
 
     const fetchSummary = async () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
-            const res = await fetch(`${API_URL}/reports/summary?tour_id=${tourId}`, {
+            // Use today's date by default or select via UI (future improvement)
+            const dateStr = new Date().toISOString().split('T')[0];
+
+            const res = await fetch(`${API_URL}/closures/summary?date_str=${dateStr}`, {
                 headers: { "Authorization": `Bearer ${session?.access_token}` }
             });
             if (res.ok) {
                 const data = await res.json();
                 setSummary(data);
             } else {
-                setError("No se pudo cargar la información del tour.");
+                console.error("Failed to fetch summary:", res.status);
+                setError("No se pudo cargar la información del cierre.");
             }
         } catch (err) {
+            console.error("Connection error:", err);
             setError("Error de conexión con el servidor.");
         } finally {
             setLoading(false);
@@ -87,7 +93,7 @@ const TourClosure = () => {
     // 3. Submit Closure
     const handleCloseTour = async () => {
         if (!hasSignature) {
-            setError("⚠️ Debes firmar para cerrar el tour.");
+            setError("⚠️ Debes firmar para cerrar la caja.");
             return;
         }
 
@@ -97,11 +103,16 @@ const TourClosure = () => {
         try {
             const canvas = canvasRef.current;
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            const dateStr = new Date().toISOString().split('T')[0];
             const formData = new FormData();
             formData.append('signature', blob, 'signature.png');
+            formData.append('date_str', dateStr);
+            // Send manual sales value (or 0 if empty)
+            const salesVal = parseFloat(document.getElementById('manual-sales').value) || 0;
+            formData.append('total_sales', salesVal);
 
             const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
-            const res = await fetch(`${API_URL}/tours/${tourId}/close`, {
+            const res = await fetch(`${API_URL}/closures/close`, {
                 method: 'POST',
                 headers: { "Authorization": `Bearer ${session?.access_token}` },
                 body: formData // Content-Type is auto-set
@@ -109,7 +120,7 @@ const TourClosure = () => {
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.detail || "Error al cerrar el tour.");
+                throw new Error(errData.detail || "Error al cerrar la caja.");
             }
 
             const data = await res.json();
@@ -135,8 +146,8 @@ const TourClosure = () => {
             <div className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
                 <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', maxWidth: '500px' }}>
                     <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎉</div>
-                    <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '1rem' }}>Tour Cerrado Exitosamente</h2>
-                    <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>Generamos tu Acta de Liquidación y la enviamos a contabilidad. Ya no puedes editar este tour.</p>
+                    <h2 style={{ fontSize: '1.8rem', color: '#fff', marginBottom: '1rem' }}>Cierre Enviado Exitosamente</h2>
+                    <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>Generamos tu Acta de Liquidación y la enviamos a contabilidad. Ya no puedes editar este turno.</p>
                     <button className="btn-primary" onClick={() => navigate('/dashboard')}>
                         Volver al Dashboard
                     </button>
@@ -151,7 +162,7 @@ const TourClosure = () => {
                 <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ArrowLeft size={20} /> Volver
                 </button>
-                <h1>Cierre Digital de Tour</h1>
+                <h1>Cierre Digital de Caja</h1>
             </header>
 
             <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
@@ -167,27 +178,37 @@ const TourClosure = () => {
                 ) : (
                     <>
                         <h2 style={{ fontSize: '1.2rem', color: '#fff', marginBottom: '0.5rem' }}>Resumen Final</h2>
-                        <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '1.5rem' }}>Tour Ref: <span style={{ fontFamily: 'monospace', color: '#e2e8f0' }}>{tourId}</span></div>
+                        <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '1.5rem' }}>Fecha: <span style={{ fontFamily: 'monospace', color: '#e2e8f0' }}>{new Date().toLocaleDateString()}</span></div>
 
                         {/* FINANCIAL SUMMARY BOX */}
                         <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#cbd5e1' }}>
-                                <span>(+) Total Anticipos:</span>
-                                <span>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(summary.total_advances)}</span>
-                            </div>
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#cbd5e1' }}>
                                 <span>(+) Total Recaudos:</span>
-                                <span>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(summary.total_collections || 0)}</span>
+                                <span>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(summary?.total_collections || 0)}</span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.9rem', color: '#cbd5e1' }}>
                                 <span>(-) Total Gastos:</span>
-                                <span>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(summary.total_expenses)}</span>
+                                <span>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(summary?.total_expenses || 0)}</span>
+                            </div>
+
+                            <div style={{ marginTop: '1.5rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
+                                    Ventas Totales del Día (Manual)
+                                </label>
+                                <input
+                                    id="manual-sales"
+                                    type="number"
+                                    className="input-field"
+                                    placeholder="Ingrese el total vendido..."
+                                    style={{ width: '100%', padding: '0.8rem', background: 'rgba(0,0,0,0.2)', border: '1px solid #334155', color: 'white', borderRadius: '0.5rem' }}
+                                />
                             </div>
 
                             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', textAlign: 'center' }}>
                                 <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8', marginBottom: '0.2rem' }}>Resultado de Liquidación</div>
                                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'monospace', color: getBalanceInfo().color }}>
-                                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(summary.balance)}
+                                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(summary?.balance || 0)}
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: getBalanceInfo().color, fontWeight: '600', marginTop: '0.2rem' }}>
                                     {getBalanceInfo().text}
@@ -198,10 +219,10 @@ const TourClosure = () => {
                         {/* SIGNATURE SECTION */}
                         <div style={{ marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1rem', color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <PenTool size={18} /> Firma del Guía
+                                <PenTool size={18} /> Firma del Encargado
                             </h3>
                             <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem', lineHeight: '1.4' }}>
-                                Declaro bajo gravedad de juramento que los gastos reportados son legítimos y corresponden a la operación del tour. Acepto el balance resultante.
+                                Declaro bajo gravedad de juramento que los gastos reportados son legítimos y corresponden a la operación del turno. Acepto el balance resultante.
                             </p>
 
                             <div style={{
@@ -258,7 +279,7 @@ const TourClosure = () => {
                             disabled={submitting}
                             onClick={handleCloseTour}
                         >
-                            {submitting ? 'Procesando Cierre...' : 'Firmar y Cerrar Tour'}
+                            {submitting ? 'Procesando Cierre...' : 'Firmar y Cerrar Caja'}
                         </button>
                     </>
                 )}
