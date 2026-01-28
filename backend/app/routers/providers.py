@@ -11,7 +11,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.get("/", response_model=List[schemas.Provider])
+@router.get("", response_model=List[schemas.Provider])
 def read_providers(
     skip: int = 0, 
     limit: int = 100, 
@@ -21,7 +21,7 @@ def read_providers(
     providers = db.query(models.Provider).filter(models.Provider.company_id == current_user.company_id).offset(skip).limit(limit).all()
     return providers
 
-@router.post("/", response_model=schemas.Provider)
+@router.post("", response_model=schemas.Provider)
 def create_provider(
     provider: schemas.ProviderCreate, 
     db: Session = Depends(get_db),

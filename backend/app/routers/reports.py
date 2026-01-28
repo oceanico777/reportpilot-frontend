@@ -155,7 +155,7 @@ def generate_report(
         print(error_msg) # Keep print just in case
         raise e
 
-@router.get("/", response_model=List[schemas.Purchase])
+@router.get("", response_model=List[schemas.Purchase])
 def list_reports(
     month: Optional[int] = Query(None),
     year: Optional[int] = Query(None),

@@ -168,7 +168,7 @@ async def close_day(
     db.refresh(new_closure)
     return new_closure
 
-@router.get("/", response_model=List[schemas.DailyClosure])
+@router.get("", response_model=List[schemas.DailyClosure])
 def list_closures(
     skip: int = 0,
     limit: int = 100,

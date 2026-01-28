@@ -15,7 +15,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.post("/", response_model=schemas.Purchase)
+@router.post("", response_model=schemas.Purchase)
 def create_purchase(
     purchase: schemas.PurchaseCreate,
     background_tasks: BackgroundTasks,
@@ -150,7 +150,7 @@ def create_purchase(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-@router.get("/", response_model=List[schemas.Purchase])
+@router.get("", response_model=List[schemas.Purchase])
 def list_purchases(
     skip: int = 0, 
     limit: int = 100, 

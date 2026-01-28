@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["budgets"],
 )
 
-@router.post("/", response_model=schemas.CategoryBudget)
+@router.post("", response_model=schemas.CategoryBudget)
 def create_or_update_budget(
     budget_in: schemas.CategoryBudgetCreate,
     db: Session = Depends(get_db),
@@ -39,7 +39,7 @@ def create_or_update_budget(
     db.refresh(new_budget)
     return new_budget
 
-@router.get("/", response_model=List[schemas.CategoryBudget])
+@router.get("", response_model=List[schemas.CategoryBudget])
 def list_budgets(
     period: str = "MONTHLY",
     db: Session = Depends(get_db),

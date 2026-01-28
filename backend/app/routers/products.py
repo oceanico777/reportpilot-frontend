@@ -27,7 +27,7 @@ class Product(ProductBase):
     class Config:
         from_attributes = True
 
-@router.get("/", response_model=List[Product])
+@router.get("", response_model=List[Product])
 def get_products(
     provider_id: str = None,
     db: Session = Depends(get_db),
@@ -38,7 +38,7 @@ def get_products(
         query = query.filter(models.Product.provider_id == provider_id)
     return query.all()
 
-@router.post("/", response_model=Product)
+@router.post("", response_model=Product)
 def create_product(
     product: ProductCreate,
     db: Session = Depends(get_db),
