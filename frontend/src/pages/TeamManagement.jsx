@@ -7,6 +7,7 @@ const TeamManagement = () => {
     const [teamData, setTeamData] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [newUser, setNewUser] = useState({ full_name: '', email: '', role: 'STAFF' });
+    const [creating, setCreating] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
