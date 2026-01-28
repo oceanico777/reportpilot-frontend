@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Package, Plus, Search, Tag, DollarSign, Filter } from 'lucide-react';
+import { Package, Plus, Search, Tag, DollarSign, Filter, Store } from 'lucide-react';
 
 const Inventory = () => {
     const { session } = useAuth();
