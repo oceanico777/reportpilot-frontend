@@ -96,9 +96,13 @@ const Dashboard = () => {
                     'Authorization': `Bearer ${session?.access_token}`
                 }
             });
+
             if (res.ok) {
                 const data = await res.json();
                 setStats(data);
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                console.error("Dashboard stats error:", errorData.detail || res.statusText);
             }
         } catch (err) {
             console.error("Error fetching dashboard stats:", err);

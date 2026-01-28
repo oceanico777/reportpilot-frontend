@@ -14,6 +14,10 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./reportpilot.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Log the database type (masked)
+db_type = DATABASE_URL.split(':')[0]
+print(f"DEBUG: Using database type: {db_type}")
+
 SQLALCHEMY_DATABASE_URL = DATABASE_URL
 
 engine = create_engine(

@@ -39,10 +39,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         role: str = payload.get("role", "user")
         
         if user_id is None:
+            print("DEBUG: JWT payload missing 'sub' (user_id)")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
             )
+        
+        print(f"DEBUG: Validated user_id: {user_id}, role: {role}")
         
         return {
             "id": user_id,
@@ -106,12 +109,15 @@ async def get_user_company(
     company = db.query(models.Company).filter(models.Company.user_id == user_id).first()
     
     if company:
+        print(f"DEBUG: User {user_id} owns/is-linked-to company {company.id}")
         # Link them properly if not linked
         if not db_user.company_id:
             db_user.company_id = company.id
             db.add(db_user)
             db.commit()
         return company.id
+    
+    print(f"DEBUG: User {user_id} has no company linked. Role is {db_user.role}")
         
     # 3. If no company and user is ADMIN (Default), Create New Company
     if db_user.role == models.UserRole.ADMIN.value:
@@ -139,10 +145,25 @@ async def get_user_company(
         # For now, let's allow them to exist without company but they can't do much.
         # Or simplistic fallback: Create a personal sandbox company? 
         # Let's enforce: Must join via Invite Code.
-        raise HTTPException(
-            status_code=403, 
-            detail="You are not part of any organization. Please provide an Invitation Code."
+        # DEBUG Fallback: Create a sandbox company if it's the first time
+        print(f"DEBUG: User {user_id} is a Guide but has no company. Auto-creating personal sandbox.")
+        company = models.Company(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            name=f"Sandbox - {current_user.get('email', 'User')}",
+            invitation_code=f"SANDBOX-{user_id[:4].upper()}"
         )
+        db.add(company)
+        db.flush()
+        db_user.company_id = company.id
+        db.add(db_user)
+        db.commit()
+        return company.id
+        
+        # raise HTTPException(
+        #     status_code=403, 
+        #     detail="You are not part of any organization. Please provide an Invitation Code."
+        # )
 
 async def get_current_active_user(
     current_user: dict = Depends(get_current_user),

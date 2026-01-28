@@ -28,13 +28,16 @@ const Reports = () => {
                 }
             });
 
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || `Error ${res.status}: ${res.statusText}`);
+            }
 
             const data = await res.json();
             setReports(data);
         } catch (err) {
             console.error("Error fetching reports:", err);
-            setError("Failed to load reports. Please check backend connection.");
+            setError(`Error al cargar reportes: ${err.message}`);
         } finally {
             setLoading(false);
         }

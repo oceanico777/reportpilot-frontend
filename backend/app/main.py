@@ -57,8 +57,11 @@ origins = [
     "http://localhost:5173",
     "http://localhost:3000", 
     "https://reportpilot-frontend.vercel.app",
-    "https://reportpilot-frontend-git-main-oceanico777s-projects.vercel.app"
+    "https://reportpilot-frontend-git-main-oceanico777s-projects.vercel.app",
+    "https://reportpilot-frontend-oceanico777s-projects.vercel.app"
 ]
+
+logger.info(f"CORS origins configured: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,6 +80,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 async def log_requests(request: Request, call_next):
     origin = request.headers.get("origin")
     print(f"DEBUG: Incoming {request.method} request to {request.url.path} from origin: {origin}")
+    logger.info(f"Incoming {request.method} {request.url.path} from {origin}")
     start_time = time.time()
     response = await call_next(request)
     duration = time.time() - start_time
