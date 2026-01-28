@@ -40,6 +40,8 @@ const NewPurchase = () => {
     const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
     const [sourceFilePath, setSourceFilePath] = useState('');
     const [totalAmount, setTotalAmount] = useState(0);
+    const [items, setItems] = useState([]);
+    const [availableProducts, setAvailableProducts] = useState([]);
 
     // Data Management
     const [providers, setProviders] = useState([]);
@@ -140,9 +142,6 @@ const NewPurchase = () => {
         if (sum > 0) setTotalAmount(sum);
     }, [items]);
 
-    // Items State
-    const [items, setItems] = useState([]);
-    const [availableProducts, setAvailableProducts] = useState([]);
 
     const handleItemChange = (idx, field, val) => {
         const newItems = [...items];
