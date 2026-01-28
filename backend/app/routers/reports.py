@@ -211,7 +211,7 @@ def get_budget(
 
 @router.post("/budget", response_model=dict)
 def set_budget(
-    budget_data: schemas.TourBudgetCreate,
+    budget_data: schemas.CategoryBudgetCreate,
     db: Session = Depends(get_db),
     company_id: str = Depends(get_user_company)
 ):
