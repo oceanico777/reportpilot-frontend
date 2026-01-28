@@ -1,11 +1,8 @@
-﻿# Entorno virtual
+﻿# Archivos de configuración local
+.env
+.env*
+*.log
 venv/
-env/
-__pycache__/
-*.pyc
-
-# Base de datos local
-reportpilot.db
-
-# Archivos de configuración local
+node_modules/
+dist/
 
