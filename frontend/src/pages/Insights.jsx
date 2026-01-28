@@ -24,7 +24,7 @@ const Insights = () => {
             // Parallel Fetch
             const [reportsRes, trendsRes] = await Promise.all([
                 fetch(`${API_URL}/purchases/?limit=200`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }),
-                fetch(`${API_URL}/reports/provider-trends`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } })
+                fetch(`${API_URL}/purchases/provider-trends`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } })
             ]);
 
             const purchasesData = await reportsRes.json();

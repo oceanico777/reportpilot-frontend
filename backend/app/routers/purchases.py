@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, date
@@ -183,3 +184,122 @@ def read_purchase(
     if not purchase:
         raise HTTPException(status_code=404, detail="Purchase not found")
     return purchase
+
+@router.get("/dashboard-stats", response_model=dict)
+def get_dashboard_stats(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_user)
+):
+    company_id = current_user.company_id
+    query = db.query(models.Purchase).filter(models.Purchase.company_id == company_id)
+    
+    if start_date:
+        query = query.filter(models.Purchase.date >= start_date)
+    if end_date:
+        query = query.filter(models.Purchase.date <= end_date)
+        
+    purchases = query.all()
+    
+    total_spent = 0
+    total_reports = len(purchases)
+    
+    monthly_data = {}
+    category_data = {}
+    provider_data = {}
+    
+    for p in purchases:
+        amount = p.amount or 0
+        total_spent += amount
+        
+        # Monthly Stats
+        month_key = p.date.strftime("%b")
+        monthly_data[month_key] = monthly_data.get(month_key, 0) + amount
+        
+        # Category Stats
+        cat = p.category or "Otros"
+        category_data[cat] = category_data.get(cat, 0) + amount
+        
+        # Provider Stats
+        prov = p.provider.name if p.provider else (p.vendor or "Otros")
+        provider_data[prov] = provider_data.get(prov, 0) + amount
+
+    monthly_stats = [{"month": k, "total": int(v)} for k, v in monthly_data.items()]
+    category_stats = [{"name": k, "value": int(v)} for k, v in category_data.items()]
+    provider_stats = [{"name": k, "value": int(v)} for k, v in provider_data.items()]
+    
+    provider_stats.sort(key=lambda x: x['value'], reverse=True)
+    
+    recent_activity = []
+    for p in sorted(purchases, key=lambda x: x.date, reverse=True)[:5]:
+         recent_activity.append({
+             "id": p.id,
+             "created_at": p.date.isoformat(),
+             "amount": int(p.amount) if p.amount else 0,
+             "category": p.category,
+             "provider": p.provider.name if p.provider else p.vendor
+         })
+
+    return {
+        "total_reports": total_reports,
+        "total_spent": int(total_spent),
+        "monthly_stats": monthly_stats,
+        "category_stats": category_stats,
+        "client_stats": provider_stats[:5], # Named client_stats for frontend compat
+        "recent_activity": recent_activity
+    }
+
+@router.get("/price-trends", response_model=List[dict])
+def get_price_trends(
+    query: str = Query(..., min_length=2),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_user)
+):
+    search_term = f"%{query.lower()}%"
+    results = db.query(
+        models.Purchase.date,
+        func.avg(models.PurchaseItem.unit_price).label('avg_price')
+    ).join(
+        models.PurchaseItem, models.Purchase.id == models.PurchaseItem.purchase_id
+    ).filter(
+        models.Purchase.company_id == current_user.company_id,
+        func.lower(models.PurchaseItem.name).like(search_term),
+        models.PurchaseItem.unit_price > 0
+    ).group_by(
+        models.Purchase.date
+    ).order_by(
+        models.Purchase.date.asc()
+    ).all()
+    
+    return [{"date": r.date.strftime("%Y-%m-%d"), "price": int(r.avg_price)} for r in results]
+
+@router.get("/provider-trends", response_model=List[dict])
+def get_provider_trends(
+    months: int = 6,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_user)
+):
+    results = db.query(models.Purchase).options(
+        db.joinedload(models.Purchase.provider)
+    ).filter(
+        models.Purchase.company_id == current_user.company_id,
+        models.Purchase.provider_id != None
+    ).order_by(models.Purchase.date.asc()).all()
+    
+    data_map = {}
+    for p in results:
+        month_key = p.date.strftime("%b %Y")
+        prov_name = p.provider.name if p.provider else "Otros"
+        amount = p.amount or 0
+        if month_key not in data_map: data_map[month_key] = {}
+        data_map[month_key][prov_name] = data_map[month_key].get(prov_name, 0) + amount
+        
+    sorted_keys = sorted(data_map.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
+    final_list = []
+    for m in sorted_keys:
+        item = {"month": m}
+        item.update(data_map[m])
+        final_list.append(item)
+        
+    return final_list[-months:]

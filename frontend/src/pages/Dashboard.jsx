@@ -91,7 +91,7 @@ const Dashboard = () => {
                 queryParams = `?start_date=${dateRange.start}&end_date=${dateRange.end}`;
             }
 
-            const res = await fetch(`${API_URL}/reports/dashboard-stats${queryParams}`, {
+            const res = await fetch(`${API_URL}/purchases/dashboard-stats${queryParams}`, {
                 headers: {
                     'Authorization': `Bearer ${session?.access_token}`
                 }
@@ -120,7 +120,7 @@ const Dashboard = () => {
     const fetchPriceTrends = async () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || '/api';
-            const res = await fetch(`${API_URL}/reports/price-trends?query=${trendProduct}`, {
+            const res = await fetch(`${API_URL}/purchases/price-trends?query=${trendProduct}`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
             if (res.ok) {

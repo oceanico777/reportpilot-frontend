@@ -110,6 +110,13 @@ class PurchaseBase(BaseModel):
     currency: Optional[str] = "COP"
     notes: Optional[str] = None
     invoice_number: Optional[str] = None
+    
+    # Legacy/Compatibility
+    month: Optional[int] = None
+    year: Optional[int] = None
+    tour_id: Optional[str] = None
+    client_name: Optional[str] = None
+    vendor: Optional[str] = None
 
 class PurchaseCreate(PurchaseBase):
     amount: float = Field(..., gt=0) # Override to make mandatory and > 0
@@ -121,8 +128,6 @@ class Purchase(PurchaseBase):
     id: str
     company_id: str
     user_id: Optional[str] = None
-    
-    vendor: Optional[str] = None # Flattened from extracted data if no provider_id
     
     storage_path: Optional[str] = None 
     file_url: Optional[str] = None
@@ -136,6 +141,10 @@ class Purchase(PurchaseBase):
 
     class Config:
         from_attributes = True
+
+# Backward compatibility
+Report = Purchase
+ReportCreate = PurchaseCreate
 
 # Category Budget Schemas
 class CategoryBudgetBase(BaseModel):

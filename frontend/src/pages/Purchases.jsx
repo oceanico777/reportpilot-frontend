@@ -22,7 +22,7 @@ const Reports = () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || '/api';
             // Fetch all reports, newest first
-            const res = await fetch(`${API_URL}/reports/?limit=50&skip=0`, {
+            const res = await fetch(`${API_URL}/purchases/?limit=50&skip=0`, {
                 headers: {
                     'Authorization': `Bearer ${session?.access_token}`
                 }

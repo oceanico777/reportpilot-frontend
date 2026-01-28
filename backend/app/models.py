@@ -145,6 +145,13 @@ class Purchase(Base):
     user_id = Column(String, ForeignKey("users.id"), nullable=True) # Who registered it
     provider_id = Column(String, ForeignKey("providers.id"), nullable=True)
     
+    # Legacy fields
+    month = Column(Integer, nullable=True)
+    year = Column(Integer, nullable=True)
+    tour_id = Column(String, nullable=True)
+    client_name = Column(String, nullable=True)
+    vendor = Column(String, nullable=True)
+    
     date = Column(Date, nullable=False) # Purchase date
     
     # Generative AI Data (Flattened)
@@ -252,4 +259,8 @@ class DailyClosure(Base):
     notes = Column(Text, nullable=True)
     
     company = relationship("Company")
+
+# Backward Compatibility
+Report = Purchase
+ReportStatus = PurchaseStatus
 
