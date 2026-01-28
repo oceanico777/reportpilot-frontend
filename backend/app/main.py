@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from .database import engine, Base
-from .routers import receipts, purchases, auth, exports, users, budgets, closures, providers, products, recipes, reports
+from .routers import receipts, purchases, auth, exports, users, budgets, closures, providers, products, recipes
 import time
 import os
 import sentry_sdk
@@ -99,7 +99,6 @@ app.include_router(exports.router, tags=["Exports"])
 app.include_router(users.router, tags=["Users"])
 app.include_router(budgets.router, prefix="/budgets", tags=["Budgets"])
 app.include_router(closures.router, tags=["Closures"])
-app.include_router(reports.router, prefix="/reports", tags=["Reports"])
 
 @app.get("/")
 def read_root():
