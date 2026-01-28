@@ -47,7 +47,7 @@ const Budgets = () => {
                 budget_amount: parseFloat(editingCategory.amount)
             };
 
-            const res = await fetch(`${API_URL}/budgets/`, {
+            const res = await fetch(`${API_URL}/budgets`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

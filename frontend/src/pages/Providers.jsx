@@ -18,7 +18,7 @@ const Providers = () => {
     const fetchProviders = async () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || '/api';
-            const res = await fetch(`${API_URL}/providers/`, {
+            const res = await fetch(`${API_URL}/providers`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
             if (res.ok) {

@@ -28,8 +28,8 @@ const Inventory = () => {
 
             // Parallel fetch
             const [prodRes, provRes] = await Promise.all([
-                fetch(`${API_URL}/products/`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }),
-                fetch(`${API_URL}/providers/`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } })
+                fetch(`${API_URL}/products`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }),
+                fetch(`${API_URL}/providers`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } })
             ]);
 
             if (prodRes.ok) setProducts(await prodRes.json());
@@ -46,7 +46,7 @@ const Inventory = () => {
         e.preventDefault();
         try {
             const API_URL = import.meta.env.VITE_API_URL || '/api';
-            const res = await fetch(`${API_URL}/products/`, {
+            const res = await fetch(`${API_URL}/products`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

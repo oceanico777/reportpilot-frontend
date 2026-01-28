@@ -52,21 +52,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.staticfiles import StaticFiles
 
-# CORS configuration
-origins = [
-    "http://localhost:5173",
-    "http://localhost:3000", 
-    "https://reportpilot-frontend.vercel.app",
-    "https://reportpilot-frontend-git-main-oceanico777s-projects.vercel.app",
-    "https://reportpilot-frontend-oceanico777s-projects.vercel.app"
-]
+# CORS configuration - More permissive for debugging
+origins = ["*"]
 
-logger.info(f"CORS origins configured: {origins}")
+logger.info("CORS configured to allow all origins [*]")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=False, # authorization header doesn't require this, and '*' needs it False
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -76,22 +70,7 @@ if not os.path.exists("uploads"):
     os.makedirs("uploads")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    origin = request.headers.get("origin")
-    print(f"DEBUG: Incoming {request.method} request to {request.url.path} from origin: {origin}")
-    logger.info(f"Incoming {request.method} {request.url.path} from {origin}")
-    start_time = time.time()
-    response = await call_next(request)
-    duration = time.time() - start_time
-    
-    logger.info("request_completed", extra={
-        "method": request.method,
-        "path": request.url.path,
-        "status_code": response.status_code,
-        "duration_ms": round(duration * 1000, 2)
-    })
-    return response
+# Request logging handled by setup_logging or uvicorn
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(receipts.router, prefix="/receipts", tags=["Receipts"])

@@ -14,7 +14,7 @@ const InventoryFetcher = ({ providerId, onProductsLoaded }) => {
             const fetchProducts = async () => {
                 try {
                     const API_URL = import.meta.env.VITE_API_URL || '/api';
-                    const res = await fetch(`${API_URL}/products/?provider_id=${providerId}`, {
+                    const res = await fetch(`${API_URL}/products?provider_id=${providerId}`, {
                         headers: { "Authorization": `Bearer ${session.access_token}` }
                     });
                     if (res.ok) {
