@@ -7,7 +7,54 @@ const TeamManagement = () => {
     const [teamData, setTeamData] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [newUser, setNewUser] = useState({ full_name: '', email: '', role: 'STAFF' });
-    const [creating, setCreating] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (session?.access_token) {
+            fetchTeam();
+        }
+    }, [session]);
+
+    const fetchTeam = async () => {
+        setLoading(true);
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const res = await fetch(`${API_URL}/admin/team`, {
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setTeamData(data);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeactivate = async (userId) => {
+        if (!window.confirm("¿Seguro que deseas cambiar el estado de este usuario?")) return;
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const res = await fetch(`${API_URL}/admin/deactivate/${userId}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+            if (res.ok) {
+                fetchTeam();
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleCopyCode = () => {
+        if (teamData?.invitation_code) {
+            navigator.clipboard.writeText(teamData.invitation_code);
+            alert("Código copiado al portapapeles");
+        }
+    };
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
