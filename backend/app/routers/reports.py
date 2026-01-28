@@ -63,9 +63,9 @@ async def upload_file(
         logger.error(f"Upload failed: {e}")
         raise HTTPException(status_code=500, detail=f"Could not upload file: {str(e)}")
 
-@router.post("/generate", response_model=schemas.Report)
+@router.post("/generate", response_model=schemas.Purchase)
 def generate_report(
-    report: schemas.ReportCreate,
+    report: schemas.PurchaseCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -84,9 +84,9 @@ def generate_report(
         
         # [Start] Read-Only Check for Closed Tours
         if report.tour_id:
-            closed_tour = db.query(models.TourClosure).filter(
-                models.TourClosure.tour_id == report.tour_id,
-                models.TourClosure.company_id == company_id
+            closed_tour = db.query(models.DailyClosure).filter(
+                models.DailyClosure.tour_id == report.tour_id,
+                models.DailyClosure.company_id == company_id
             ).first()
             if closed_tour:
                 raise HTTPException(
@@ -111,13 +111,13 @@ def generate_report(
             )
             
             # Check for duplicates
-            existing_duplicate = db.query(models.Report).filter(
-                models.Report.company_id == company_id,
-                models.Report.vendor == vendor,
-                models.Report.amount == amount
+            existing_duplicate = db.query(models.Purchase).filter(
+                models.Purchase.company_id == company_id,
+                models.Purchase.vendor == vendor,
+                models.Purchase.amount == amount
             ).first()
     
-        db_report = models.Report(
+        db_report = models.Purchase(
             company_id=company_id,
             user_id=user_id,
             month=report.month,
@@ -129,7 +129,7 @@ def generate_report(
             currency=currency,
             category=category,
             source_file_path=report.source_file_path,
-            status=models.ReportStatus.PROCESSING.value,
+            status=models.PurchaseStatus.PROCESSING.value,
             summary_text=summary,
             is_duplicate=True if existing_duplicate else False,
             potential_duplicate_of=existing_duplicate.id if existing_duplicate else None
@@ -155,7 +155,7 @@ def generate_report(
         print(error_msg) # Keep print just in case
         raise e
 
-@router.get("/", response_model=List[schemas.Report])
+@router.get("/", response_model=List[schemas.Purchase])
 def list_reports(
     month: Optional[int] = Query(None),
     year: Optional[int] = Query(None),
@@ -163,34 +163,34 @@ def list_reports(
     db: Session = Depends(get_db),
     company_id: str = Depends(get_user_company)
 ):
-    query = db.query(models.Report).filter(models.Report.company_id == company_id)
-    if month: query = query.filter(models.Report.month == month)
-    if year: query = query.filter(models.Report.year == year)
-    if tour_id: query = query.filter(models.Report.tour_id == tour_id)
-    return query.order_by(models.Report.created_at.desc()).all()
+    query = db.query(models.Purchase).filter(models.Purchase.company_id == company_id)
+    if month: query = query.filter(models.Purchase.month == month)
+    if year: query = query.filter(models.Purchase.year == year)
+    if tour_id: query = query.filter(models.Purchase.tour_id == tour_id)
+    return query.order_by(models.Purchase.created_at.desc()).all()
 
-@router.patch("/{report_id}/approve", response_model=schemas.Report)
+@router.patch("/{report_id}/approve", response_model=schemas.Purchase)
 def approve_report(
     report_id: str,
     db: Session = Depends(get_db),
     company_id: str = Depends(get_user_company)
 ):
-    report = db.query(models.Report).filter(models.Report.id == report_id, models.Report.company_id == company_id).first()
+    report = db.query(models.Purchase).filter(models.Purchase.id == report_id, models.Purchase.company_id == company_id).first()
     if not report: raise HTTPException(status_code=404, detail="Report not found")
-    report.status = models.ReportStatus.APPROVED.value
+    report.status = models.PurchaseStatus.APPROVED.value
     db.commit()
     db.refresh(report)
     return report
 
-@router.patch("/{report_id}/reject", response_model=schemas.Report)
+@router.patch("/{report_id}/reject", response_model=schemas.Purchase)
 def reject_report(
     report_id: str,
     db: Session = Depends(get_db),
     company_id: str = Depends(get_user_company)
 ):
-    report = db.query(models.Report).filter(models.Report.id == report_id, models.Report.company_id == company_id).first()
+    report = db.query(models.Purchase).filter(models.Purchase.id == report_id, models.Purchase.company_id == company_id).first()
     if not report: raise HTTPException(status_code=404, detail="Report not found")
-    report.status = models.ReportStatus.REJECTED.value
+    report.status = models.PurchaseStatus.REJECTED.value
     db.commit()
     db.refresh(report)
     return report
@@ -201,10 +201,10 @@ def get_budget(
     db: Session = Depends(get_db),
     company_id: str = Depends(get_user_company)
 ):
-    budget = db.query(models.TourBudget).filter(
-        models.TourBudget.tour_id == tour_id,
-        models.TourBudget.company_id == company_id,
-        models.TourBudget.category == "TOTAL"
+    budget = db.query(models.CategoryBudget).filter(
+        models.CategoryBudget.tour_id == tour_id,
+        models.CategoryBudget.company_id == company_id,
+        models.CategoryBudget.category == "TOTAL"
     ).first()
     
     return {"amount": budget.budget_amount if budget else 0}
@@ -218,17 +218,17 @@ def set_budget(
     # Ensure category is TOTAL for this specific feature
     category = "TOTAL"
     
-    existing = db.query(models.TourBudget).filter(
-        models.TourBudget.tour_id == budget_data.tour_id,
-        models.TourBudget.company_id == company_id,
-        models.TourBudget.category == category
+    existing = db.query(models.CategoryBudget).filter(
+        models.CategoryBudget.tour_id == budget_data.tour_id,
+        models.CategoryBudget.company_id == company_id,
+        models.CategoryBudget.category == category
     ).first()
     
     if existing:
         existing.budget_amount = budget_data.budget_amount
         existing.updated_at = datetime.utcnow()
     else:
-        new_budget = models.TourBudget(
+        new_budget = models.CategoryBudget(
             tour_id=budget_data.tour_id,
             company_id=company_id,
             category=category,
@@ -250,17 +250,17 @@ def get_tour_summary(
     Balance = (Budget + Total Collections) - Total Expenses
     """
     # 1. Get Budget
-    budget_rec = db.query(models.TourBudget).filter(
-        models.TourBudget.tour_id == tour_id,
-        models.TourBudget.company_id == company_id,
-        models.TourBudget.category == "TOTAL"
+    budget_rec = db.query(models.CategoryBudget).filter(
+        models.CategoryBudget.tour_id == tour_id,
+        models.CategoryBudget.company_id == company_id,
+        models.CategoryBudget.category == "TOTAL"
     ).first()
     budget = budget_rec.budget_amount if budget_rec else 0
 
     # 2. Get Reports
-    reports = db.query(models.Report).filter(
-        models.Report.company_id == company_id,
-        models.Report.tour_id == tour_id
+    reports = db.query(models.Purchase).filter(
+        models.Purchase.company_id == company_id,
+        models.Purchase.tour_id == tour_id
     ).all()
 
     total_advances = 0 # Legacy, kept for compatibility if needed elsewhere
@@ -301,9 +301,9 @@ def get_admin_summary(
     Returns a list of all tours with their financial status for the accountant.
     """
     # 1. Get all unique tours for this company
-    query = db.query(models.Report.tour_id).filter(models.Report.company_id == company_id)
-    if month: query = query.filter(models.Report.month == month)
-    if year: query = query.filter(models.Report.year == year)
+    query = db.query(models.Purchase.tour_id).filter(models.Purchase.company_id == company_id)
+    if month: query = query.filter(models.Purchase.month == month)
+    if year: query = query.filter(models.Purchase.year == year)
     
     tours = [r[0] for r in query.distinct().all() if r[0]]
     
@@ -311,17 +311,17 @@ def get_admin_summary(
     
     for t_id in tours:
         # Get Budget (cat TOTAL)
-        budget_rec = db.query(models.TourBudget).filter(
-            models.TourBudget.tour_id == t_id,
-            models.TourBudget.company_id == company_id,
-            models.TourBudget.category == "TOTAL"
+        budget_rec = db.query(models.CategoryBudget).filter(
+            models.CategoryBudget.tour_id == t_id,
+            models.CategoryBudget.company_id == company_id,
+            models.CategoryBudget.category == "TOTAL"
         ).first()
         budget = budget_rec.budget_amount if budget_rec else 0
 
         # Get stats
-        reports = db.query(models.Report).filter(
-            models.Report.tour_id == t_id,
-            models.Report.company_id == company_id
+        reports = db.query(models.Purchase).filter(
+            models.Purchase.tour_id == t_id,
+            models.Purchase.company_id == company_id
         ).all()
         
         advances = 0
@@ -363,12 +363,12 @@ def get_dashboard_stats(
     company_id: str = Depends(get_user_company)
 ):
     # Base query
-    query = db.query(models.Report).filter(models.Report.company_id == company_id)
+    query = db.query(models.Purchase).filter(models.Purchase.company_id == company_id)
     
     if start_date:
-        query = query.filter(models.Report.created_at >= start_date)
+        query = query.filter(models.Purchase.created_at >= start_date)
     if end_date:
-        query = query.filter(models.Report.created_at <= datetime.combine(end_date, datetime.max.time()))
+        query = query.filter(models.Purchase.created_at <= datetime.combine(end_date, datetime.max.time()))
         
     reports = query.all()
     
@@ -430,23 +430,23 @@ def get_dashboard_stats(
 
     # --- NEW: Active Tour Logic ---
     active_tour = None
-    latest_report = db.query(models.Report).filter(
-        models.Report.company_id == company_id,
-        models.Report.tour_id != None
-    ).order_by(models.Report.created_at.desc()).first()
+    latest_report = db.query(models.Purchase).filter(
+        models.Purchase.company_id == company_id,
+        models.Purchase.tour_id != None
+    ).order_by(models.Purchase.created_at.desc()).first()
 
     if latest_report:
         # Check if closed
-        is_closed = db.query(models.TourClosure).filter(
-            models.TourClosure.tour_id == latest_report.tour_id, 
-            models.TourClosure.company_id == company_id
+        is_closed = db.query(models.DailyClosure).filter(
+            models.DailyClosure.tour_id == latest_report.tour_id, 
+            models.DailyClosure.company_id == company_id
         ).first()
         
         if not is_closed:
             # Calculate tour summary
-            tour_reports = db.query(models.Report).filter(
-                models.Report.tour_id == latest_report.tour_id,
-                models.Report.company_id == company_id
+            tour_reports = db.query(models.Purchase).filter(
+                models.Purchase.tour_id == latest_report.tour_id,
+                models.Purchase.company_id == company_id
             ).all()
             
             tour_spent = 0
@@ -459,9 +459,9 @@ def get_dashboard_stats(
                     tour_spent += amt
             
             # Get category-specific budgets
-            budgets = db.query(models.TourBudget).filter(
-                models.TourBudget.tour_id == latest_report.tour_id,
-                models.TourBudget.company_id == company_id
+            budgets = db.query(models.CategoryBudget).filter(
+                models.CategoryBudget.tour_id == latest_report.tour_id,
+                models.CategoryBudget.company_id == company_id
             ).all()
             
             total_budget = sum([b.budget_amount for b in budgets])
@@ -489,7 +489,7 @@ def get_dashboard_stats(
         "active_tour": active_tour
     }
 
-@router.get("/admin/transactions", response_model=List[schemas.Report])
+@router.get("/admin/transactions", response_model=List[schemas.Purchase])
 def list_admin_transactions(
     month: Optional[int] = Query(None),
     year: Optional[int] = Query(None),
@@ -502,14 +502,14 @@ def list_admin_transactions(
     Returns a flat list of ALL transactions for the company, filtered by period.
     Designed for the 'Sábana de Datos' view in Accountant Dashboard.
     """
-    query = db.query(models.Report).filter(models.Report.company_id == company_id)
+    query = db.query(models.Purchase).filter(models.Purchase.company_id == company_id)
     
     if month:
-        query = query.filter(models.Report.month == month)
+        query = query.filter(models.Purchase.month == month)
     if year:
-        query = query.filter(models.Report.year == year)
+        query = query.filter(models.Purchase.year == year)
         
-    return query.order_by(models.Report.created_at.desc()).offset(skip).limit(limit).all()
+    return query.order_by(models.Purchase.created_at.desc()).offset(skip).limit(limit).all()
 
 @router.get("/price-trends", response_model=List[dict])
 def get_price_trends(

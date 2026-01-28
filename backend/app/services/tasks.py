@@ -20,22 +20,22 @@ def export_receipts_zip(company_id: str, month: int, year: int, user_id: str = N
     """
     db: Session = SessionLocal()
     try:
-        query = db.query(models.Report).filter(
-            models.Report.company_id == company_id,
-            models.Report.month == month,
-            models.Report.year == year
+        query = db.query(models.Purchase).filter(
+            models.Purchase.company_id == company_id,
+            models.Purchase.month == month,
+            models.Purchase.year == year
         )
         if user_id:
-            query = query.filter(models.Report.user_id == user_id)
+            query = query.filter(models.Purchase.user_id == user_id)
         
         # Filter by status if provided
         # We assume 'paid' maps to APPROVED (or logic defined by user) and 'pending' to PROCESSING/PENDING
         # For this MVP, let's look at the 'status' column directly.
         if status_filter:
             if status_filter == 'paid':
-                 query = query.filter(models.Report.status == models.ReportStatus.APPROVED.value)
+                 query = query.filter(models.Purchase.status == models.PurchaseStatus.APPROVED.value)
             elif status_filter == 'pending':
-                 query = query.filter(models.Report.status != models.ReportStatus.APPROVED.value)
+                 query = query.filter(models.Purchase.status != models.PurchaseStatus.APPROVED.value)
         
         reports = query.all()
         if not reports:
