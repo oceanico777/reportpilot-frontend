@@ -29,7 +29,7 @@ const TourClosure = () => {
 
     const fetchSummary = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
             // Use today's date by default or select via UI (future improvement)
             const dateStr = new Date().toISOString().split('T')[0];
 

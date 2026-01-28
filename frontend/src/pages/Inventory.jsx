@@ -24,15 +24,12 @@ const Inventory = () => {
 
     const fetchInitialData = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-            // Parallel fetch
-            const [prodRes, provRes] = await Promise.all([
+            const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
+            const [productsRes, providersRes] = await Promise.all([
                 fetch(`${API_URL}/products`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }),
                 fetch(`${API_URL}/providers`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } })
             ]);
 
-            if (prodRes.ok) setProducts(await prodRes.json());
             if (provRes.ok) setProviders(await provRes.json());
 
         } catch (err) {

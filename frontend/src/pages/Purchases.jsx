@@ -20,7 +20,8 @@ const Reports = () => {
 
     const fetchReports = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            // Force proxy /api in production to avoid CORS and mixed content issues
+            const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
             // Fetch all reports, newest first
             const res = await fetch(`${API_URL}/purchases?limit=50&skip=0`, {
                 headers: {
