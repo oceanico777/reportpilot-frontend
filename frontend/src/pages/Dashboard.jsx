@@ -73,7 +73,7 @@ const Dashboard = () => {
     const handleSync = async () => {
         if (syncing || pendingCount === 0) return;
         setSyncing(true);
-        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+        const API_URL = import.meta.env.VITE_API_URL || '/api';
         await syncOfflineReports(session, API_URL);
         setPendingCount(getPendingReports().length);
         fetchDashboardStats();
@@ -84,7 +84,7 @@ const Dashboard = () => {
         try {
             // Only show loader on initial load or if we want to blocking-load
             // setLoading(true); 
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
 
             let queryParams = '';
             if (dateRange.start && dateRange.end) {
@@ -119,7 +119,7 @@ const Dashboard = () => {
 
     const fetchPriceTrends = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/reports/price-trends?query=${trendProduct}`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });

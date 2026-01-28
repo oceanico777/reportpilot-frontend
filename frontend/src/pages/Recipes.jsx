@@ -20,7 +20,7 @@ const Recipes = () => {
     const [newItemProductId, setNewItemProductId] = useState('');
     const [newItemQuantity, setNewItemQuantity] = useState(0);
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
 
     useEffect(() => {
         if (session?.access_token) {

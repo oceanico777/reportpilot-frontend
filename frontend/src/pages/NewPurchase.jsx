@@ -13,7 +13,7 @@ const InventoryFetcher = ({ providerId, onProductsLoaded }) => {
         if (providerId && session?.access_token) {
             const fetchProducts = async () => {
                 try {
-                    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+                    const API_URL = import.meta.env.VITE_API_URL || '/api';
                     const res = await fetch(`${API_URL}/products/?provider_id=${providerId}`, {
                         headers: { "Authorization": `Bearer ${session.access_token}` }
                     });
@@ -50,7 +50,7 @@ const NewPurchase = () => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const { session } = useAuth();
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
 
     // Categories
     const CATEGORIES = [

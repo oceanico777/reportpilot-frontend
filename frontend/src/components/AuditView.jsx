@@ -14,7 +14,7 @@ const AuditView = ({ report, onClose, onUpdate }) => {
     const handleStatusChange = async (action) => {
         setSaving(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const endpoint = action === 'APPROVED' ? 'approve' : 'reject';
             const res = await fetch(`${API_URL}/reports/${report.id}/${endpoint}`, {
                 method: 'PATCH',

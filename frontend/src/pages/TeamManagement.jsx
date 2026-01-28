@@ -19,7 +19,7 @@ const TeamManagement = () => {
     const fetchTeam = async () => {
         setLoading(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/admin/team`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
@@ -37,7 +37,7 @@ const TeamManagement = () => {
     const handleDeactivate = async (userId) => {
         if (!window.confirm("¿Seguro que deseas cambiar el estado de este usuario?")) return;
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/admin/deactivate/${userId}`, {
                 method: 'PATCH',
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
@@ -61,7 +61,7 @@ const TeamManagement = () => {
         e.preventDefault();
         setCreating(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/admin/users`, {
                 method: 'POST',
                 headers: {

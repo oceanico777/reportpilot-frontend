@@ -4,7 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { RefreshCw, UploadCloud, FileText, Loader, ArrowRight, XCircle, Info, CheckCircle } from 'lucide-react';
 
 // URL del Backend de Render
-const BACKEND_URL = "https://reportpilot-backend.onrender.com";
+const BACKEND_URL = "/api";
 
 // El componente principal
 export default function App() {

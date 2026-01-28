@@ -34,7 +34,7 @@ const AccountantDashboard = () => {
     const fetchSummary = async () => {
         setLoading(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const query = new URLSearchParams({
                 month: filters.month,
                 year: filters.year,
@@ -59,7 +59,7 @@ const AccountantDashboard = () => {
     const fetchTransactions = async () => {
         setLoadingTransactions(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const query = new URLSearchParams({
                 month: filters.month,
                 year: filters.year,
@@ -84,7 +84,7 @@ const AccountantDashboard = () => {
     const handleExportZip = async () => {
         setExporting(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             let query = `month=${filters.month}&year=${filters.year}`;
             if (filters.status && filters.status !== 'all') {
                 query += `&status=${filters.status}`;
@@ -115,7 +115,7 @@ const AccountantDashboard = () => {
 
     const handleExportXlsx = async (tourId) => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/exports/tours/${tourId}/xlsx`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
@@ -367,7 +367,7 @@ const AccountantDashboard = () => {
                                                     <div style={{ display: 'flex', gap: '5px' }}>
                                                         <button
                                                             onClick={async () => {
-                                                                const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+                                                                const API_URL = import.meta.env.VITE_API_URL || '/api';
                                                                 try {
                                                                     await fetch(`${API_URL}/reports/${tx.id}/approve`, {
                                                                         method: 'PATCH',
@@ -383,7 +383,7 @@ const AccountantDashboard = () => {
                                                         </button>
                                                         <button
                                                             onClick={async () => {
-                                                                const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+                                                                const API_URL = import.meta.env.VITE_API_URL || '/api';
                                                                 try {
                                                                     await fetch(`${API_URL}/reports/${tx.id}/reject`, {
                                                                         method: 'PATCH',

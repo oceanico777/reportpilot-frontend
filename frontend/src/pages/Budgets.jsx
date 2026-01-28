@@ -21,7 +21,7 @@ const Budgets = () => {
 
     const fetchBudgets = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/budgets/status?period=MONTHLY`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
@@ -40,7 +40,7 @@ const Budgets = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const payload = {
                 period: "MONTHLY",
                 category: editingCategory.category,

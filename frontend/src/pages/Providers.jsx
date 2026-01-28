@@ -17,7 +17,7 @@ const Providers = () => {
 
     const fetchProviders = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/providers/`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
@@ -35,7 +35,7 @@ const Providers = () => {
     const handleCreate = async (e) => {
         e.preventDefault();
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/providers/`, {
                 method: 'POST',
                 headers: {
@@ -59,7 +59,7 @@ const Providers = () => {
 
     const handleExport = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/exports/providers-excel`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });

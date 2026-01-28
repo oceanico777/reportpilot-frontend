@@ -18,7 +18,7 @@ const Insights = () => {
 
     const fetchData = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
 
             // Parallel Fetch
             const [reportsRes, trendsRes] = await Promise.all([
@@ -37,7 +37,7 @@ const Insights = () => {
 
     const handleDownloadExcel = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/exports/providers-excel`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
@@ -116,7 +116,7 @@ const Insights = () => {
                 <button
                     className="btn-primary flex items-center gap-2"
                     onClick={() => {
-                        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+                        const API_URL = import.meta.env.VITE_API_URL || '/api';
                         const token = session?.access_token;
                         if (token) {
                             // Fetch via blob to handle auth headers if needed, or simply open if cookie based. 

@@ -20,7 +20,7 @@ const Reports = () => {
 
     const fetchReports = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             // Fetch all reports, newest first
             const res = await fetch(`${API_URL}/reports/?limit=50&skip=0`, {
                 headers: {
@@ -45,7 +45,7 @@ const Reports = () => {
 
         setDeletingId(id);
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8005';
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
             const res = await fetch(`${API_URL}/reports/${id}`, {
                 method: 'DELETE',
                 headers: {
