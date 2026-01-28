@@ -145,6 +145,9 @@ class Purchase(PurchaseBase):
 # Backward compatibility
 Report = Purchase
 ReportCreate = PurchaseCreate
+TourBudget = CategoryBudget
+TourBudgetCreate = CategoryBudgetCreate
+TourClosure = DailyClosure
 
 # Category Budget Schemas
 class CategoryBudgetBase(BaseModel):

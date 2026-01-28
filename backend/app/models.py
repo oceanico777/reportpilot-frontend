@@ -264,4 +264,6 @@ class DailyClosure(Base):
 # Backward Compatibility
 Report = Purchase
 ReportStatus = PurchaseStatus
+TourBudget = CategoryBudget
+TourClosure = DailyClosure
 
