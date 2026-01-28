@@ -6,6 +6,7 @@ from datetime import datetime, date
 from ..database import get_db
 from .. import models, schemas, auth
 from ..services import purchase_processor
+from ..services.google_sheets_service import google_sheets_service
 
 router = APIRouter(
     prefix="/purchases",
@@ -126,6 +127,21 @@ def create_purchase(
         
         # Trigger background processing (OCR linking, classification refinement)
         background_tasks.add_task(purchase_processor.process_purchase, db_purchase.id)
+        
+        # Trigger Google Sheets Sync
+        try:
+            items_list = purchase.extracted_data.get('items', []) if purchase.extracted_data else []
+            sync_data = {
+                "date": db_purchase.date,
+                "provider": db_purchase.provider.name if db_purchase.provider else (purchase.extracted_data.get('vendor') if purchase.extracted_data else "Sin Proveedor"),
+                "category": db_purchase.category,
+                "amount": db_purchase.amount,
+                "currency": db_purchase.currency,
+                "items_count": len(items_list) if isinstance(items_list, list) else 0
+            }
+            background_tasks.add_task(google_sheets_service.sync_purchase, sync_data)
+        except Exception as e:
+            print(f"DEBUG: Error preparing GSheets sync: {e}")
         
         return db_purchase
     except Exception as e:

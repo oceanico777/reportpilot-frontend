@@ -7,6 +7,7 @@ const Insights = () => {
     const { session } = useAuth();
     const [stats, setStats] = useState({
         byCategory: [],
+        byProvider: [],
         providerTrends: []
     });
 
@@ -22,14 +23,14 @@ const Insights = () => {
 
             // Parallel Fetch
             const [reportsRes, trendsRes] = await Promise.all([
-                fetch(`${API_URL}/reports/?limit=100`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }),
+                fetch(`${API_URL}/purchases/?limit=200`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }),
                 fetch(`${API_URL}/reports/provider-trends`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } })
             ]);
 
-            const reportsData = await reportsRes.json();
+            const purchasesData = await reportsRes.json();
             const trendsData = await trendsRes.json();
 
-            processData(reportsData, trendsData);
+            processData(purchasesData, trendsData);
         } catch (e) {
             console.error(e);
         }
@@ -59,21 +60,38 @@ const Insights = () => {
         }
     };
 
-    const processData = (reportsData, trendsData) => {
+    const processData = (purchasesData, trendsData) => {
         // 1. Category Data
         const categoryMap = {};
-        reportsData.forEach(report => {
-            const amount = report.amount || 0;
-            const category = report.category || 'Sin Categoría';
-            if (amount > 0) categoryMap[category] = (categoryMap[category] || 0) + amount;
+        const providerMap = {};
+
+        purchasesData.forEach(p => {
+            const amount = p.amount || 0;
+            const category = p.category || 'Sin Categoría';
+            const provider = p.provider?.name || p.vendor || 'Varios / Otros';
+
+            if (amount > 0) {
+                categoryMap[category] = (categoryMap[category] || 0) + amount;
+                providerMap[provider] = (providerMap[provider] || 0) + amount;
+            }
         });
+
         const byCategory = Object.keys(categoryMap).map(key => ({
             name: key,
             value: categoryMap[key]
         }));
 
+        const byProvider = Object.keys(providerMap)
+            .map(key => ({
+                name: key,
+                value: providerMap[key]
+            }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 5); // Top 5 providers for pie clarity
+
         setStats({
             byCategory,
+            byProvider,
             providerTrends: trendsData
         });
     };
@@ -113,22 +131,27 @@ const Insights = () => {
         <div className="page-content">
             <header className="page-header flex justify-between items-center">
                 <h1>Analítica y Reportes</h1>
-                <button
-                    className="btn-primary flex items-center gap-2"
-                    onClick={() => {
-                        const API_URL = import.meta.env.VITE_API_URL || '/api';
-                        const token = session?.access_token;
-                        if (token) {
-                            // Fetch via blob to handle auth headers if needed, or simply open if cookie based. 
-                            // Since we use Bearer, we need a trick or just use window.open if we switch to cookie auth.
-                            // For now, let's try direct link. If it fails due to Auth, we'll need a fetch-blob approach.
-                            // Given our "Download" button usually needs Auth header, we'll implement a fetch downloader function.
-                            handleDownloadExcel();
-                        }
-                    }}
-                >
-                    <Download size={18} /> Exportar Excel
-                </button>
+                <div className="flex items-center gap-4">
+                    <div className="text-right hidden md:block">
+                        <div className="text-xs text-emerald-400 font-medium flex items-center justify-end gap-1">
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            Sincronización Sheets Activa
+                        </div>
+                        <div className="text-[10px] text-slate-500">Auto-push a la nube</div>
+                    </div>
+                    <button
+                        className="btn-primary flex items-center gap-2"
+                        onClick={() => {
+                            const API_URL = import.meta.env.VITE_API_URL || '/api';
+                            const token = session?.access_token;
+                            if (token) {
+                                handleDownloadExcel();
+                            }
+                        }}
+                    >
+                        <Download size={18} /> Exportar Excel
+                    </button>
+                </div>
             </header>
 
             <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
@@ -212,6 +235,51 @@ const Insights = () => {
                     ) : (
                         <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
                             <p>No hay datos suficientes.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* CHART 3: PROVIDER DIST */}
+                <div className="card" style={{ padding: '2rem' }}>
+                    <h2 style={{ marginBottom: '0.5rem', textAlign: 'center', fontSize: '1.1rem', fontWeight: '500' }}>
+                        Gasto por Proveedor (Top 5)
+                    </h2>
+
+                    {stats.byProvider.length > 0 ? (
+                        <>
+                            <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                <p>Mayor proveedor: <strong style={{ color: 'var(--color-primary)' }}>{stats.byProvider[0].name}</strong></p>
+                            </div>
+
+                            <div style={{ width: '100%', height: 300 }}>
+                                <ResponsiveContainer>
+                                    <PieChart>
+                                        <Pie
+                                            data={stats.byProvider}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={90}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            stroke="none"
+                                        >
+                                            {stats.byProvider.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value) => formatCurrency(value)}
+                                            contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                                        />
+                                        <Legend iconType="circle" />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                            <p>No hay datos de proveedores.</p>
                         </div>
                     )}
                 </div>

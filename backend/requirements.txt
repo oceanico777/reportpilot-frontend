@@ -24,3 +24,5 @@ celery==5.3.4
 redis==5.0.1
 email-validator
 sentry-sdk[fastapi]==1.39.1
+google-api-python-client
+google-auth

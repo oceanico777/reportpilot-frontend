@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Any
 from datetime import datetime, date
 from enum import Enum
@@ -112,6 +112,7 @@ class PurchaseBase(BaseModel):
     invoice_number: Optional[str] = None
 
 class PurchaseCreate(PurchaseBase):
+    amount: float = Field(..., gt=0) # Override to make mandatory and > 0
     company_id: str
     source_file_path: Optional[str] = None
     extracted_data: Optional[dict] = None  # New field to pass OCR data

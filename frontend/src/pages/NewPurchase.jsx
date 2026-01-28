@@ -39,6 +39,7 @@ const NewPurchase = () => {
     const [manualVendor, setManualVendor] = useState(''); // If provider not in list
     const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
     const [sourceFilePath, setSourceFilePath] = useState('');
+    const [totalAmount, setTotalAmount] = useState(0);
 
     // Data Management
     const [providers, setProviders] = useState([]);
@@ -108,10 +109,11 @@ const NewPurchase = () => {
 
             // Auto-fill logic
             if (ocrData.date) setPurchaseDate(ocrData.date);
+            if (ocrData.amount) setTotalAmount(ocrData.amount);
             if (ocrData.vendor) setManualVendor(ocrData.vendor);
 
             // Try to match provider by name
-            const match = providers.find(p => p.name.toLowerCase().includes(ocrData.vendor?.toLowerCase()));
+            const match = providers.find(p => p.name?.toLowerCase().includes(ocrData.vendor?.toLowerCase()));
             if (match) setProviderId(match.id);
 
             // Category suggestion
@@ -131,6 +133,12 @@ const NewPurchase = () => {
             }
         }
     };
+
+    // Auto-calculate total from items
+    useEffect(() => {
+        const sum = items.reduce((acc, item) => acc + (parseFloat(item.total) || 0), 0);
+        if (sum > 0) setTotalAmount(sum);
+    }, [items]);
 
     // Items State
     const [items, setItems] = useState([]);
@@ -166,11 +174,21 @@ const NewPurchase = () => {
             return;
         }
 
+        if (totalAmount <= 0) {
+            setError('⚠️ El monto total debe ser mayor a cero.');
+            return;
+        }
+
+        if (!providerId && !manualVendor) {
+            setError('⚠️ Por favor, selecciona un proveedor o ingresa el nombre manualmente.');
+            return;
+        }
+
         setLoading(true);
 
         const payload = {
             date: purchaseDate,
-            amount: extractedData?.amount || 0,
+            amount: totalAmount,
             currency: extractedData?.currency || 'COP',
             category: selectedCategory || 'Otros',
             provider_id: providerId || null,
@@ -307,6 +325,19 @@ const NewPurchase = () => {
                                 className="input-field w-full"
                                 value={purchaseDate}
                                 onChange={e => setPurchaseDate(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Total Amount Input */}
+                        <div>
+                            <label className="input-label mb-2 block flex items-center gap-2">
+                                <FileText size={16} /> Monto Total
+                            </label>
+                            <input
+                                type="number"
+                                className="input-field w-full text-xl font-bold text-emerald-400"
+                                value={totalAmount}
+                                onChange={e => setTotalAmount(parseFloat(e.target.value) || 0)}
                             />
                         </div>
                     </div>
