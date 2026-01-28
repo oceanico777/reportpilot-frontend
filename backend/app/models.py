@@ -10,6 +10,7 @@ class ReceiptStatus(str, enum.Enum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     PROCESSED = "PROCESSED"
+    COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
 class PurchaseStatus(str, enum.Enum):
