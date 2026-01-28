@@ -142,12 +142,6 @@ class Purchase(PurchaseBase):
     class Config:
         from_attributes = True
 
-# Backward compatibility
-Report = Purchase
-ReportCreate = PurchaseCreate
-TourBudget = CategoryBudget
-TourBudgetCreate = CategoryBudgetCreate
-TourClosure = DailyClosure
 
 # Category Budget Schemas
 class CategoryBudgetBase(BaseModel):
@@ -198,4 +192,9 @@ class DailyClosureSummary(BaseModel):
     class Config:
         from_attributes = True
 
-
+# Backward Compatibility Aliases
+Report = Purchase
+ReportCreate = PurchaseCreate
+TourBudget = CategoryBudget
+TourBudgetCreate = CategoryBudgetCreate
+TourClosure = DailyClosure
