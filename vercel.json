@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "https://reportpilot-backend.onrender.com/$1"
+            "destination": "https://reportpilot-backend1.onrender.com/$1"
         },
         {
             "source": "/(.*)",

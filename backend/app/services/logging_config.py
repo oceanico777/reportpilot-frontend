@@ -11,7 +11,7 @@ class StructuredLogger(logging.Logger):
             "timestamp": datetime.utcnow().isoformat(),
             "level": logging.getLevelName(level),
             "message": msg,
-            "service": "reportpilot-backend",
+            "service": "reportpilot-backend1",
             **extra
         }
         

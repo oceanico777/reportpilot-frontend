@@ -320,7 +320,7 @@ export default function App() {
 
         <div className="mt-10 p-4 bg-gray-800 rounded-lg text-sm text-gray-400">
           <p className="font-semibold text-blue-300">Nota importante:</p>
-          <p>La URL del backend es: <code className="bg-gray-700 p-1 rounded">https://reportpilot-backend.onrender.com</code>. Si el análisis falla, verifica la clave <code className="bg-gray-700 p-1 rounded">GEMINI_API_KEY</code> en Render y las reglas de <code className="bg-gray-700 p-1 rounded">CORS</code> en el código del Backend.</p>
+          <p>La URL del backend es: <code className="bg-gray-700 p-1 rounded">https://reportpilot-backend1.onrender.com</code>. Si el análisis falla, verifica la clave <code className="bg-gray-700 p-1 rounded">GEMINI_API_KEY</code> en Render y las reglas de <code className="bg-gray-700 p-1 rounded">CORS</code> en el código del Backend.</p>
         </div>
       </main>
     </div>
