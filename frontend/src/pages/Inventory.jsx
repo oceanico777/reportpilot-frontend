@@ -42,7 +42,7 @@ const Inventory = () => {
     const handleCreate = async (e) => {
         e.preventDefault();
         try {
-            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
             const res = await fetch(`${API_URL}/products`, {
                 method: 'POST',
                 headers: {
