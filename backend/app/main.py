@@ -74,14 +74,14 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(receipts.router, prefix="/receipts", tags=["Receipts"])
-app.include_router(purchases.router, tags=["Purchases"])
-app.include_router(products.router, tags=["Products"]) # NEW
-app.include_router(recipes.router, tags=["Recipes"]) # NEW
-app.include_router(providers.router, tags=["Providers"])
-app.include_router(exports.router, tags=["Exports"])
+app.include_router(purchases.router, prefix="/purchases", tags=["Purchases"])
+app.include_router(products.router, prefix="/products", tags=["Products"])
+app.include_router(recipes.router, prefix="/recipes", tags=["Recipes"])
+app.include_router(providers.router, prefix="/providers", tags=["Providers"])
+app.include_router(exports.router, prefix="/exports", tags=["Exports"])
 app.include_router(users.router, tags=["Users"])
 app.include_router(budgets.router, prefix="/budgets", tags=["Budgets"])
-app.include_router(closures.router, tags=["Closures"])
+app.include_router(closures.router, prefix="/closures", tags=["Closures"])
 app.include_router(reports.router, prefix="/reports", tags=["Reports"])
 
 @app.get("/")

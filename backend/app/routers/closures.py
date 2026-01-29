@@ -7,7 +7,6 @@ from sqlalchemy import func
 from typing import List
 
 router = APIRouter(
-    prefix="/closures",
     tags=["closures"],
 )
 

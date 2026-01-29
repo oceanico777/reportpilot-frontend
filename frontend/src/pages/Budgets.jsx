@@ -21,7 +21,7 @@ const Budgets = () => {
 
     const fetchBudgets = async () => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
             const res = await fetch(`${API_URL}/budgets/status?period=MONTHLY`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });

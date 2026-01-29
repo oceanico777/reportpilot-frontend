@@ -7,7 +7,6 @@ from .. import models, schemas
 from ..auth import get_user_company
 
 router = APIRouter(
-    prefix="/budgets",
     tags=["budgets"],
 )
 

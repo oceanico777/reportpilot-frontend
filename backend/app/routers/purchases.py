@@ -10,7 +10,6 @@ from ..services import purchase_processor
 from ..services.google_sheets_service import google_sheets_service
 
 router = APIRouter(
-    prefix="/purchases",
     tags=["purchases"],
     responses={404: {"description": "Not found"}},
 )
