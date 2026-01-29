@@ -42,7 +42,7 @@ app = FastAPI(
     All endpoints (except `/health`) require Bearer token authentication.
     Use your Supabase JWT token in the Authorization header.
     """,
-    version="2.0.2",
+    version="2.0.3",
     docs_url="/docs",
     redoc_url="/redoc"
 )
