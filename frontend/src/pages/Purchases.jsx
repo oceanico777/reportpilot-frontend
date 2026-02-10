@@ -50,7 +50,7 @@ const Reports = () => {
         setDeletingId(id);
         try {
             const API_URL = import.meta.env.VITE_API_URL || '/api';
-            const res = await fetch(`${API_URL}/reports/${id}`, {
+            const res = await fetch(`${API_URL}/purchases/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${session?.access_token}`

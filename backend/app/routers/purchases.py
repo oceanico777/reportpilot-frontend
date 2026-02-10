@@ -336,3 +336,21 @@ def get_provider_trends(
         final_list.append(item)
         
     return final_list[-months:]
+
+@router.delete("/{purchase_id}")
+def delete_purchase(
+    purchase_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_user)
+):
+    purchase = db.query(models.Purchase).filter(
+        models.Purchase.id == purchase_id,
+        models.Purchase.company_id == current_user.company_id
+    ).first()
+    
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+        
+    db.delete(purchase)
+    db.commit()
+    return {"message": "Purchase deleted successfully"}
