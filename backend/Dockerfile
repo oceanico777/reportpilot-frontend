@@ -33,5 +33,5 @@ COPY . .
 ENV PORT=10000
 EXPOSE ${PORT}
 
-# Comando para ejecutar la aplicación usando shell form para permitir substitución de variables
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+# Comando para ejecutar la aplicación: primero corre las migraciones y luego arranca el servidor
+CMD python migrate_db.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

@@ -158,16 +158,22 @@ def list_purchases(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
 ):
-    query = db.query(models.Purchase).filter(models.Purchase.company_id == current_user.company_id)
-    
-    if start_date:
-        query = query.filter(models.Purchase.date >= start_date)
-    if end_date:
-        query = query.filter(models.Purchase.date <= end_date)
-    if provider_id:
-        query = query.filter(models.Purchase.provider_id == provider_id)
+    try:
+        query = db.query(models.Purchase).filter(models.Purchase.company_id == current_user.company_id)
         
-    return query.order_by(models.Purchase.date.desc()).offset(skip).limit(limit).all()
+        if start_date:
+            query = query.filter(models.Purchase.date >= start_date)
+        if end_date:
+            query = query.filter(models.Purchase.date <= end_date)
+        if provider_id:
+            query = query.filter(models.Purchase.provider_id == provider_id)
+            
+        return query.order_by(models.Purchase.date.desc()).offset(skip).limit(limit).all()
+    except Exception as e:
+        print(f"DEBUG: Error in list_purchases: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error al listar compras: {str(e)}")
 
 @router.get("/{purchase_id}", response_model=schemas.Purchase)
 def read_purchase(
