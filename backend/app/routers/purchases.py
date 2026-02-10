@@ -34,7 +34,7 @@ def create_purchase(
             
             existing_duplicate = db.query(models.Purchase).filter(
                 models.Purchase.company_id == current_user.company_id,
-                # models.Purchase.vendor == vendor, # REMOVED: Not a column
+                models.Purchase.vendor == vendor,
                 models.Purchase.amount == amount,
                 models.Purchase.date == date_obj
             ).first()
@@ -77,13 +77,12 @@ def create_purchase(
             company_id=current_user.company_id,
             user_id=current_user.id,
             date=purchase.date,
-            # extracted_data removed (not a column)
             # DB Fields
             amount=purchase.amount,
             currency=purchase.currency,
             category=purchase.category,
             invoice_number=purchase.invoice_number,
-            # vendor=... removed (not a column)
+            vendor=purchase.extracted_data.get('vendor') if purchase.extracted_data else purchase.vendor,
             provider_id=final_provider_id, # FIX: Save selected or auto-created provider_id
             
             source_file_path=purchase.source_file_path,
@@ -240,13 +239,42 @@ def get_dashboard_stats(
              "provider": p.provider.name if p.provider else p.vendor
          })
 
+    # --- Active Tour / Budget Logic ---
+    active_tour = None
+    from ..models import CategoryBudget
+    total_budget_item = db.query(CategoryBudget).filter(
+        CategoryBudget.company_id == current_user.company_id,
+        CategoryBudget.category == 'TOTAL'
+    ).first()
+    
+    if total_budget_item:
+        now = datetime.utcnow()
+        month_start = datetime(now.year, now.month, 1)
+        total_month_spent = db.query(func.sum(models.Purchase.amount)).filter(
+            models.Purchase.company_id == current_user.company_id,
+            models.Purchase.date >= month_start
+        ).scalar() or 0
+        
+        budget = total_budget_item.budget_amount
+        remaining = budget - total_month_spent
+        progress = min(100, (total_month_spent / budget * 100)) if budget > 0 else 0
+        
+        active_tour = {
+            "tour_id": f"Presupuesto {now.strftime('%B %Y')}",
+            "total_budget": budget,
+            "total_spent": total_month_spent,
+            "remaining": remaining,
+            "progress": progress
+        }
+
     return {
         "total_reports": total_reports,
-        "total_spent": int(total_spent),
+        "total_spent": int(total_spent or 0),
         "monthly_stats": monthly_stats,
         "category_stats": category_stats,
         "client_stats": provider_stats[:5], # Named client_stats for frontend compat
-        "recent_activity": recent_activity
+        "recent_activity": recent_activity,
+        "active_tour": active_tour
     }
 
 @router.get("/price-trends", response_model=List[dict])

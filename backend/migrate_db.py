@@ -6,10 +6,10 @@ print("Starting migration...")
 # engine = create_engine(DATABASE_URL) # Already exists
 
 commands = [
-    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS vendor VARCHAR;",
-    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS amount FLOAT;",
-    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS currency VARCHAR;",
-    "ALTER TABLE reports ADD COLUMN IF NOT EXISTS category VARCHAR;"
+    "ALTER TABLE purchases ADD COLUMN vendor VARCHAR;",
+    "ALTER TABLE purchases ADD COLUMN amount FLOAT;",
+    "ALTER TABLE purchases ADD COLUMN currency VARCHAR;",
+    "ALTER TABLE purchases ADD COLUMN category VARCHAR;"
 ]
 
 with engine.connect() as conn:
