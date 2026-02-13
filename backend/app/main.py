@@ -65,6 +65,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Global Exception Handler to ensure CORS headers even on 500 errors
+@app.middleware("http")
+async def add_cors_header_to_errors(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        from fastapi.responses import JSONResponse
+        import traceback
+        logger.error(f"Unhandled Exception: {e}")
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal Server Error: {str(e)}", "type": str(type(e).__name__)},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
+
+
 # Mount uploads directory for static file access
 if not os.path.exists("uploads"):
     os.makedirs("uploads")

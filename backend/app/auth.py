@@ -173,9 +173,11 @@ async def get_current_active_user(
     Returns the current active user model, creating it if it doesn't exist (sync with Auth).
     """
     user_id = current_user["id"]
+    print(f"DEBUG: get_current_active_user for {user_id}")
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     
     if not db_user:
+        print(f"DEBUG: Creating new user {user_id}")
         # Auto-create user
         db_user = models.User(
             id=user_id, 
@@ -188,11 +190,13 @@ async def get_current_active_user(
         db.refresh(db_user)
         
     if not db_user.company_id:
+        print(f"DEBUG: User {user_id} has no company_id. Auto-creating...")
         try:
             await get_user_company(current_user, db)
             db.refresh(db_user)
         except Exception as e:
-            print(f"Error auto-creating company: {e}")
+            print(f"CRITICAL ERROR auto-creating company: {e}")
+            raise e
 
-        
     return db_user
+
