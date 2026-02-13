@@ -104,14 +104,24 @@ def repair():
             for col_name, col_type in columns:
                 add_column_if_not_exists(conn, table_name, col_name, col_type)
         
-        # Specific cleanup: set admin role for existing users if NULL
+        # --- CRITICAL: Force defaults on existing NULLs to avoid Pydantic failures ---
+        print("Forcing defaults on existing NULL values...")
         try:
             conn.execute(text("UPDATE users SET role = 'ADMIN' WHERE role IS NULL;"))
             conn.execute(text("UPDATE users SET is_active = TRUE WHERE is_active IS NULL;"))
-        except: pass
+            conn.execute(text("UPDATE purchases SET status = 'DRAFT' WHERE status IS NULL;"))
+            conn.execute(text("UPDATE purchases SET currency = 'COP' WHERE currency IS NULL;"))
+            conn.execute(text("UPDATE purchases SET date = CURRENT_DATE WHERE date IS NULL;"))
+            conn.execute(text("UPDATE receipts SET status = 'PENDING' WHERE status IS NULL;"))
+            conn.execute(text("UPDATE providers SET category = 'General' WHERE category IS NULL;"))
+            conn.execute(text("UPDATE products SET unit = 'unit' WHERE unit IS NULL;"))
+            conn.commit()
+            print("Defaults applied successfully.")
+        except Exception as e:
+            print(f"Warning during defaults application: {e}")
         
-        conn.commit()
     print("EXTENDED Database repair completed successfully.")
+
 
 if __name__ == "__main__":
     repair()

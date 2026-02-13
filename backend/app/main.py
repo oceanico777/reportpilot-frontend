@@ -113,3 +113,30 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/debug/db")
+def debug_db(db=Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        result = db.execute(text("SELECT current_database(), current_user;")).fetchone()
+        return {"status": "connected", "db": result[0], "user": result[1]}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+@app.get("/debug/purchases")
+def debug_purchases(db=Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        # Raw query to avoid Pydantic validation
+        result = db.execute(text("SELECT * FROM purchases LIMIT 5;")).fetchall()
+        columns = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'purchases';")).fetchall()
+        col_names = [c[0] for c in columns]
+        
+        data = []
+        for row in result:
+            data.append(dict(zip(col_names, row)))
+            
+        return {"status": "ok", "count": len(data), "sample": data}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "trace": traceback.format_exc()}
