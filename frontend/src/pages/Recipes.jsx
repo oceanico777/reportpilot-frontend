@@ -21,6 +21,7 @@ const Recipes = () => {
     const [newItemQuantity, setNewItemQuantity] = useState(0);
 
     const API_URL = import.meta.env.VITE_API_URL || '/api';
+    console.log("DEBUG: Recipes fetching from:", API_URL);
 
     useEffect(() => {
         if (session?.access_token) {

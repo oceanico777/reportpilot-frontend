@@ -25,6 +25,7 @@ const Inventory = () => {
     const fetchInitialData = async () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
+            console.log("DEBUG: Inventory fetching from:", API_URL);
             // Parallel fetch
             const [prodRes, provRes] = await Promise.all([
                 fetch(`${API_URL}/products`, { headers: { 'Authorization': `Bearer ${session?.access_token}` } }),
@@ -35,7 +36,8 @@ const Inventory = () => {
             if (provRes.ok) setProviders(await provRes.json());
 
         } catch (err) {
-            console.error(err);
+            console.error("CRITICAL: Inventory load error:", err);
+            console.error("Details:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
         } finally {
             setLoading(false);
         }

@@ -34,4 +34,4 @@ ENV PORT=10000
 EXPOSE ${PORT}
 
 # Comando para ejecutar la aplicación: primero corre las migraciones y luego arranca el servidor
-CMD python migrate_db.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+CMD python repair_db.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

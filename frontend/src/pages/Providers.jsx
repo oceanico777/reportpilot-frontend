@@ -18,6 +18,7 @@ const Providers = () => {
     const fetchProviders = async () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
+            console.log("DEBUG: Providers fetching from:", API_URL);
             const res = await fetch(`${API_URL}/providers`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
