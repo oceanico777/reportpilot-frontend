@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from .database import engine, Base
+from .database import engine, Base, get_db
 from .routers import receipts, purchases, auth, exports, users, budgets, closures, providers, products, recipes, reports
 import time
 import os

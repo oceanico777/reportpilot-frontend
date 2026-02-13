@@ -124,4 +124,12 @@ def repair():
 
 
 if __name__ == "__main__":
-    repair()
+    try:
+        repair()
+    except Exception as e:
+        print(f"CRITICAL: Database repair failed, but continuing startup: {e}")
+        import traceback
+        traceback.print_exc()
+        # Exit with 0 to allow uvicorn to start even if repair failed
+        import sys
+        sys.exit(0)
